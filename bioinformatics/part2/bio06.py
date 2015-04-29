@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys, os
+import copy
 __author__ = 'drummer'
 
 def build_graph_by_pure_pairs(pairs, weights):
@@ -414,6 +415,18 @@ def add_edge(_tree,_start,_end,_len):
     _tree[0][1+ _start] += 1
     _tree[1][1+ _end] += 1
 
+def del_edge(_tree,_start,_end):
+    print("del edge from ", _start," to ",_end)     
+
+    for i in xrange(len(_tree[_start+2])):
+        end = _tree[_start+2][i]
+        if end[0] == _end:
+            del _tree[_start+2][i]
+            break
+    
+    _tree[0][1+ _start] -= 1
+    _tree[1][1+ _end] -= 1
+
 def print_tree(_tree):
     N = _tree[0][0]
     for i in xrange(N):
@@ -421,22 +434,342 @@ def print_tree(_tree):
         for end in ends:
             print(i,"->",end[0],":","{0:.3f}".format(end[1]))
 
+def to_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return -1
 
 def construct_parsimony_graph(_size,_data):
     _graph = []
     print(_data)
     pairs = []
+    cur_len = _size
+    print(cur_len)
+    build_empty_graph(_graph,_size)
+
     for d in _data:
         arch_info = d.replace('\n','')        
         pair = [leaf for leaf in arch_info.split('->')]        
         pairs.append(pair)
         
+    cur_empty = 0;
+    strings = {}
     print(pairs)
-    return _graph
+    for p in pairs:
+        start_int = to_int(p[0])
+        if start_int <0:
+            #string
+            res = strings.get(p[0],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[0]
+                #strings[cur_empty] = p[0][2]
+                start_int = cur_empty
+                cur_empty += 1
+        else:
+            strings[start_int] = ""
+            while start_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
 
+        end_int = to_int(p[1])
+        if end_int <0:
+            #string
+            res = strings.get(p[1],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[1]
+                #strings[cur_empty] = p[1][2]
+                end_int = cur_empty
+                cur_empty += 1
+        else:
+            strings[end_int] = ""
+            while end_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
 
-def small_parsimony(_tree):
+        add_edge(_graph,start_int,end_int,0)
+        #add_edge(_graph,end_int,start_int,0)
+            
+
+    #print(strings)
+    #print(_graph)
+
+    return [_graph,strings]
+
+def construct_rooted_parsimony_graph(_size,_data):
+    _graph = []
+    print(_data)
+    pairs = []
+    cur_len = _size
+    print(cur_len)
+    build_empty_graph(_graph,_size)
+
+    for d in _data:
+        arch_info = d.replace('\n','')        
+        pair = [leaf for leaf in arch_info.split('->')]        
+        pairs.append(pair)
+        
+    cur_empty = 0;
+    strings = {}
+    strings_rev = {}
+    print(pairs)
+    start_int = -1
+    end_int = -1
+    for p in pairs:
+        start_int = to_int(p[0])
+        if start_int <0:
+            #string
+            res = strings_rev.get(p[0],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[0]
+                strings_rev[p[0]] = cur_empty                
+                start_int = cur_empty
+                cur_empty += 1
+            else:
+                start_int = res
+        else:
+            strings[start_int] = ""
+            while start_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
+
+        end_int = to_int(p[1])
+        if end_int <0:
+            #string
+            res = strings_rev.get(p[1],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[1]
+                strings_rev[p[1]] = cur_empty                 
+                end_int = cur_empty
+                cur_empty += 1
+            else:
+                end_int = res
+        else:
+            strings[end_int] = ""
+            while end_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
+
+        add_edge(_graph,start_int,end_int,0)
+        #add_edge(_graph,end_int,start_int,0)
+    #take last pair
+    del_edge(_graph,start_int,end_int)
+    del_edge(_graph,end_int,start_int)
+
+    root_id = add_vertex_alone(_graph)
+    strings[root_id] = ''
+    add_edge(_graph,root_id,start_int,0)
+    add_edge(_graph,root_id,end_int,0)
+
+    print(_graph)
+
+    tagged = [root_id]
+    cur_nodes = _graph[2+root_id]
+    while len(cur_nodes)>0:
+        new_nodes = []
+        for node in cur_nodes:
+            node_id = node[0]
+            tagged.append(node_id)
+            children = _graph[2+node_id]
+            for child in children:
+                if child[0] in tagged:
+                    #del 
+                    del_edge(_graph,node_id,child[0])
+                    continue
+                else:
+                    new_nodes.append(child)
+
+        cur_nodes = new_nodes[:]
+
+    print(strings)
+    print(_graph)
+
+    return [_graph,strings]
+
+def calc_parsimony_values(_tree,_v_id,_values,_tags,_alphabet,_def_val):
+    if _tags[_v_id] == 1:
+        return
+    print("calc ",_v_id)
+    children = _tree[2+_v_id]
+    cur_def_val = []
+    for d in _def_val:
+        cur_def_val.append(d[:])    
+    self_val = _values.get(_v_id,cur_def_val)
+    #for l in xrange(len(_def_val)):
+    #    for k in xrange(len(_alphabet)):
+    
+    for child in children:
+        if _tags[child[0]] == 0:
+            calc_parsimony_values(_tree,child[0],_values,_tags,_alphabet,_def_val)
+        child_val = _values[child[0]]
+        child_vals = []
+        print(child)
+        for i in xrange(len(self_val)):
+            #for each letter
+            #print("letter # ",i)
+            #print(child_val[i])
+            for j in xrange(len(_alphabet)):    
+                #print(_alphabet[j])     
+                min_val = sys.maxint       
+                for k in xrange(len(_alphabet)):
+                    delta = 0
+                    if j!=k:
+                        delta = 1                    
+                                    
+                    if child_val[i][k] < sys.maxint:
+                        child_len = child_val[i][k]
+                    else:
+                        child_len = 1
+
+                    #print(j,k,delta,child_len)
+                    if (child_len + delta) < min_val:
+                        min_val = child_len + delta
+
+                #print(i,j,min_val)
+                self_val[i][j] += min_val                            
+        print(self_val)
+    _values[_v_id] = self_val[:]
+
+    _tags[_v_id] = 1
+
+def generate_strings(_tree,_root_id,_values,_strings,_alphabet):    
+    
+    if _root_id == -1:
+        tree_size = _tree[0][0]
+        for i in xrange(tree_size):
+            if _tree[1][i+1] == 0:
+                value = _values[i]
+                new_str = ''
+                #print(value)
+                for v_el in value:
+                    min_i = -1
+                    min_val = sys.maxint
+                    for j in xrange(len(v_el)):
+                        if v_el[j] < min_val:
+                            min_val = v_el[j]
+                            min_i = j
+                    new_str += _alphabet[min_i]
+                #print(new_str)
+                _strings[i] = new_str[:]        
+                generate_strings(_tree,i,_values,_strings,_alphabet)
+                break
+    else:
+        root_str = _strings[_root_id]
+        #print(_root_id,root_str)
+        children = _tree[2+_root_id]
+        for child in children:
+            child_id = child[0]
+            #print("child ",child_id)
+            if len(_strings[child_id]) >0:
+                continue
+            value = _values[child_id]            
+            new_str = ''
+            #print(value)
+            v_ind = 0
+            for v_el in value:
+                min_i = -1
+                min_val = sys.maxint
+                min_letters = []
+                for j in xrange(len(v_el)):
+                    if v_el[j] < min_val:
+                        min_val = v_el[j]
+                        #min_i = j
+                        min_letters = [_alphabet[j]]
+                    elif v_el[j] == min_val:
+                        min_letters.append(_alphabet[j])
+                #new_str += _alphabet[min_i]
+                #print("parent letter ",root_str[v_ind],", letters are ", min_letters)
+                if root_str[v_ind] in min_letters:
+                    new_str += root_str[v_ind]
+                else:
+                    new_str += min_letters[0]
+                v_ind += 1
+            #print(new_str)
+            _strings[child_id] = new_str[:]        
+            generate_strings(_tree,child_id,_values,_strings,_alphabet)
+    
     pass
+
+def calc_parsimony_score(_tree,_values,_strings,_alphabet):
+    root_id = -1
+    tree_size = _tree[0][0]
+    score = 0
+    for i in xrange(tree_size):
+        if _tree[1][i+1] == 0:
+            root_id = i
+            break
+    value = _values[root_id]
+    for val in value:
+        min_v = sys.maxint
+        for v in val:
+            if v<min_v:
+                min_v = v
+        score += min_v
+    print(score)    
+
+def hammings_dist(_str_a,_str_b):
+    dist = 0
+    _len = len(_str_a)
+    for i in xrange(_len):
+        if _str_a[i] != _str_b[i]:
+            dist +=1
+    return dist
+
+
+def print_parsinomy_tree(_tree,_strings):
+    tree_size = _tree[0][0]
+    for i in xrange(tree_size):
+        for ends in _tree[2+i]:
+            end = ends[0]
+            str_a = _strings[i]+"->"+_strings[end]+":"+str(hammings_dist(_strings[i],_strings[end]))
+            #print("%1>%2:%3" % _strings[i],_strings[end],hammings_dist(_strings[i],_strings[end]))
+            print(str_a)
+            str_b = _strings[end]+"->"+_strings[i]+":"+str(hammings_dist(_strings[i],_strings[end]))
+            print(str_b)
+            #print(_strings[end],"->",_strings[i],":",hammings_dist(_strings[i],_strings[end]))
+
+
+def small_parsimony(_tree,_strings):
+    alphabet = ['A','C','G','T']
+
+    print(_tree)
+    print(_strings)
+    max_len = 0
+    for s in _strings:
+        len_s = len(_strings[s])
+        if  len_s > max_len:
+            max_len = len_s
+
+    print(max_len) 
+    tree_size = _tree[0][0]
+    s_values = {}
+    def_self_val = []
+    for i in xrange(max_len):
+         def_self_val.append([0 for j in xrange(len(alphabet))])
+
+    vertex_tags = [0 for j in xrange(tree_size)]
+    for i in xrange(tree_size):
+        if len(_tree[2+i]) == 0:
+            s_value = []
+            for s in _strings[i]:                
+                letter_s = [sys.maxint for j in xrange(len(alphabet))]
+                letter_ind = alphabet.index(s)
+                letter_s[letter_ind] = 0
+                s_value.append(letter_s)               
+            s_values[i] = s_value
+            vertex_tags[i] = 1
+    print(s_values)
+    print(vertex_tags)
+
+    ripes = [x for x in vertex_tags if x == 0]
+    #while len(ripes) > 0:
+    print(_tree)
+    for i in xrange(len(vertex_tags)):
+        if vertex_tags[i] != 0:
+            continue
+        calc_parsimony_values(_tree,i,s_values,vertex_tags,alphabet,def_self_val)
+        #break
+    print(s_values)
+    calc_parsimony_score(_tree,s_values,_strings,alphabet)    
+    generate_strings(_tree,-1,s_values,_strings,alphabet)
+    #print(_strings)
+    return _tree
 
 def task61():
     # Implement SmallParsimony to solve the Small Parsimony Problem.
@@ -445,19 +778,53 @@ def task61():
     # Output: The minimum parsimony score of this tree, followed by the adjacency list of the
     # tree corresponding to labeling internal nodes by DNA strings in order to minimize the
     # parsimony score of the tree.
-    input_file_name = os.getcwd() + "/bio02/data/06/input01.txt"
+    input_file_name = os.getcwd() + "/part2/data/06/input01.txt"
     #input_file_name = "/Users/boolker/Desktop/tasks/bio02/data/04/input034.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
     
     dim = int(data[0])    
-    p_graph = construct_parsimony_graph(dim,data[1:])
-    res_tree = small_parsimony(p_graph)
+    res = construct_parsimony_graph(dim,data[1:])
+    res_tree = small_parsimony(res[0],res[1])
     print(res_tree)
 
+def task62():
+    # Implement SmallParsimony to solve the Small Parsimony Problem.
+    # Input: An integer n followed by an adjacency list for a rooted binary tree with n leaves
+    # labeled by DNA strings.
+    # Output: The minimum parsimony score of this tree, followed by the adjacency list of the
+    # tree corresponding to labeling internal nodes by DNA strings in order to minimize the
+    # parsimony score of the tree.
+    input_file_name = os.getcwd() + "/part2/data/06/input021.txt"
+    #input_file_name = "/Users/boolker/Desktop/tasks/bio02/data/04/input034.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+    
+    dim = int(data[0])    
+    res = construct_rooted_parsimony_graph(dim,data[1:])
+    res_tree = small_parsimony(res[0],res[1])
+    #del root
+    print(res_tree)
+    N = res_tree[0][0]
+    root_id = N-1
+    children = res_tree[2+root_id]
+    root_son = children[0][0]
+    root_daughter = children[1][0]
+
+    add_edge(res_tree,root_son,root_daughter,0)
+    del_edge(res_tree,root_id,root_son)
+    del_edge(res_tree,root_id,root_daughter)
+
+    del res_tree[2+root_id]
+    res_tree[0][0] -=1
+    print(res_tree)
+    
+    print_parsinomy_tree(res_tree,res[1])
+    #print(res_tree)
     
 
 if __name__ == "__main__":   
-    task61() 
+    task62() 
     
