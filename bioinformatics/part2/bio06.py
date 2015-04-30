@@ -823,8 +823,26 @@ def task62():
     
     print_parsinomy_tree(res_tree,res[1])
     #print(res_tree)
+
+def get_nearest_neighbours(_tree,_a,_b):
     
+    
+def task63():
+    #Solve the Nearest Neighbors of a Tree Problem.
+    # Input: Two internal nodes a and b specifying an edge e, followed by an adjacency
+    # list of an unrooted binary tree.
+    # Output: Two adjacency lists representing the nearest neighbors of the tree with
+    # respect to e. Separate the adjacency lists with a blank line.
+    input_file_name = os.getcwd() + "/part2/data/06/input03.txt"
+    #input_file_name = "/Users/boolker/Desktop/tasks/bio02/data/04/input034.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    #dim = int(data[0])    
+    res = construct_parsimony_graph(1,data[1:])
+    print(res[0])
 
 if __name__ == "__main__":   
-    task62() 
+    task63() 
     
