@@ -703,6 +703,16 @@ def calc_parsimony_score(_tree,_values,_strings,_alphabet):
         score += min_v
     print(score)    
 
+def calc_parsimony_score_ex(_tree,_strings):
+    tree_size = _tree[0][0]
+    score = 0
+    for i in xrange(tree_size):
+        edges = _tree[2+i]
+        for edge in edges:
+            score += hammings_dist(_strings[i],_strings[edge[0]])
+        
+    print(score)    
+
 def hammings_dist(_str_a,_str_b):
     dist = 0
     _len = len(_str_a)
@@ -724,6 +734,13 @@ def print_parsinomy_tree(_tree,_strings):
             print(str_b)
             #print(_strings[end],"->",_strings[i],":",hammings_dist(_strings[i],_strings[end]))
 
+def print_tree(_tree):
+    tree_size = _tree[0][0]
+    for i in xrange(tree_size):
+        for ends in _tree[2+i]:
+            end = ends[0]
+            str_a = str(i)+"->"+str(end)
+            print(str_a)            
 
 def small_parsimony(_tree,_strings):
     alphabet = ['A','C','G','T']
@@ -824,7 +841,90 @@ def task62():
     print_parsinomy_tree(res_tree,res[1])
     #print(res_tree)
 
+def clone_tree(_tree):
+    res = []
+    res.append(_tree[0][:])
+    res.append(_tree[1][:])
+    for t_s in _tree[2:]:
+        row = []
+        for t in t_s:
+            row.append(t[:])        
+        res.append(row)
+    return res
+
 def get_nearest_neighbours(_tree,_a,_b):
+    children_a = _tree[2+_a]
+    children_b = _tree[2+_b]
+    c_a = []
+    c_b = []
+    for i in xrange(len(children_a)):
+        child = children_a[i]
+        if child[0] != _b:
+            c_a.append(child[0])            
+
+    for i in xrange(len(children_b)):
+        child = children_b[i]
+        if child[0] != _a:
+            c_b.append(child[0])
+
+    print(c_a,c_b)    
+
+    #swap c_a[1] and c_b[0]
+    swap_a = c_a[1]
+    swap_b = c_b[0]
+    neighbour_1 = clone_tree(_tree)    
+    root_node_a = neighbour_1[2+_a]
+    root_node_b = neighbour_1[2+_b]
+    for v in root_node_a:
+        if v[0] == swap_a:
+            v[0] = swap_b
+            neighbour = neighbour_1[2+swap_b]
+            for n in neighbour:
+                if n[0] == _b:
+                    n[0] = _a
+            break
+
+    for v in root_node_b:
+        if v[0] == swap_b:
+            v[0] = swap_a
+            neighbour = neighbour_1[2+swap_a]
+            for n in neighbour:
+                if n[0] == _a:
+                    n[0] = _b
+
+    print("n1",neighbour_1)
+    #swap c_a[1] and c_b[1]
+    neighbour_2 = clone_tree(_tree)
+    swap_a = c_a[1]
+    swap_b = c_b[1]    
+    root_node_a = neighbour_2[2+_a]
+    root_node_b = neighbour_2[2+_b]
+    for v in root_node_a:
+        if v[0] == swap_a:
+            v[0] = swap_b
+            neighbour = neighbour_2[2+swap_b]
+            for n in neighbour:
+                if n[0] == _b:
+                    n[0] = _a
+            break
+
+    for v in root_node_b:
+        if v[0] == swap_b:
+            v[0] = swap_a
+            neighbour = neighbour_2[2+swap_a]
+            for n in neighbour:
+                if n[0] == _a:
+                    n[0] = _b
+    print("n2",neighbour_2)
+    print(_tree)
+
+    print("n1",neighbour_1)
+    print("n2",neighbour_2)
+
+    print_tree(neighbour_1)
+    print('')
+    print_tree(neighbour_2)
+    pass
     
     
 def task63():
@@ -833,16 +933,72 @@ def task63():
     # list of an unrooted binary tree.
     # Output: Two adjacency lists representing the nearest neighbors of the tree with
     # respect to e. Separate the adjacency lists with a blank line.
-    input_file_name = os.getcwd() + "/part2/data/06/input03.txt"
+    input_file_name = os.getcwd() + "/part2/data/06/input032.txt"
     #input_file_name = "/Users/boolker/Desktop/tasks/bio02/data/04/input034.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
 
     #dim = int(data[0])    
+
+    vertices = [int(v) for v in data[0].replace('\n','').split(' ')]    
     res = construct_parsimony_graph(1,data[1:])
     print(res[0])
+    get_nearest_neighbours(res[0],vertices[0],vertices[1])
+
+def to_unrooted_tree(_tree):
+    edges = []
+    tree_size = _tree[0][0]
+    for i in xrange(tree_size):
+        tree_edges = _tree[2+i]
+        for edge in tree_edges:
+            edges.append([i,edge[0]])
+    print(edges)
+    for edge in edges:
+        add_edge(_tree,edge[1],edge[0],0)
+
+def task64():
+    # Implement the nearest neighbor interchange heuristic for the Large Parsimony Problem.
+    # Input: An integer n, followed by an adjacency list for an unrooted binary tree whose n leaves are
+    # labeled by DNA strings and whose internal nodes are labeled by integers.
+    # Output: The parsimony score and unrooted labeled tree obtained after every step of the nearest
+    # neighbor interchange heuristic. Each step should be separated by a blank line.
+    input_file_name = os.getcwd() + "/part2/data/06/input04.txt"
+    #input_file_name = "/Users/boolker/Desktop/tasks/bio02/data/04/input034.txt"
+
+    #vertices = [int(v) for v in data[0].replace('\n','').split(' ')]    
+    #res = construct_parsimony_graph(1,data[1:])
+    #print(res[0])
+    #get_nearest_neighbours(res[0],vertices[0],vertices[1])
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+    
+    dim = int(data[0])    
+    res = construct_rooted_parsimony_graph(dim,data[1:])
+    res_tree = small_parsimony(res[0],res[1])
+    #del root
+    print(res_tree)
+    N = res_tree[0][0]
+    root_id = N-1
+    children = res_tree[2+root_id]
+    root_son = children[0][0]
+    root_daughter = children[1][0]
+
+    add_edge(res_tree,root_son,root_daughter,0)
+    del_edge(res_tree,root_id,root_son)
+    del_edge(res_tree,root_id,root_daughter)
+
+    del res_tree[2+root_id]
+    res_tree[0][0] -=1
+    #print(res_tree)
+    
+    print_parsinomy_tree(res_tree,res[1])
+    print(res[1])
+    print(res_tree)
+    to_unrooted_tree(res_tree)
+    calc_parsimony_score_ex(res_tree,res[1])
 
 if __name__ == "__main__":   
-    task63() 
+    task64() 
     
