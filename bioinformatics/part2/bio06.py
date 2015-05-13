@@ -711,7 +711,8 @@ def calc_parsimony_score_ex(_tree,_strings):
         for edge in edges:
             score += hammings_dist(_strings[i],_strings[edge[0]])
         
-    print(score)    
+    #print(score/2)    
+    return score/2
 
 def hammings_dist(_str_a,_str_b):
     dist = 0
@@ -722,16 +723,19 @@ def hammings_dist(_str_a,_str_b):
     return dist
 
 
-def print_parsinomy_tree(_tree,_strings):
+def print_parsinomy_tree(_tree,_strings,_rooted=0):
     tree_size = _tree[0][0]
     for i in xrange(tree_size):
         for ends in _tree[2+i]:
             end = ends[0]
-            str_a = _strings[i]+"->"+_strings[end]+":"+str(hammings_dist(_strings[i],_strings[end]))
+            str_a = ''
+            str_a = "("+str(i)+"->"+str(end)+") "
+            str_a += _strings[i]+"->"+_strings[end]+":"+str(hammings_dist(_strings[i],_strings[end]))
             #print("%1>%2:%3" % _strings[i],_strings[end],hammings_dist(_strings[i],_strings[end]))
             print(str_a)
-            str_b = _strings[end]+"->"+_strings[i]+":"+str(hammings_dist(_strings[i],_strings[end]))
-            print(str_b)
+            if _rooted == 1:
+                str_b = _strings[end]+"->"+_strings[i]+":"+str(hammings_dist(_strings[i],_strings[end]))
+                print(str_b)
             #print(_strings[end],"->",_strings[i],":",hammings_dist(_strings[i],_strings[end]))
 
 def print_tree(_tree):
@@ -892,7 +896,7 @@ def get_nearest_neighbours(_tree,_a,_b):
                 if n[0] == _a:
                     n[0] = _b
 
-    print("n1",neighbour_1)
+    #print("n1",neighbour_1)
     #swap c_a[1] and c_b[1]
     neighbour_2 = clone_tree(_tree)
     swap_a = c_a[1]
@@ -915,15 +919,61 @@ def get_nearest_neighbours(_tree,_a,_b):
             for n in neighbour:
                 if n[0] == _a:
                     n[0] = _b
-    print("n2",neighbour_2)
-    print(_tree)
+    
 
-    print("n1",neighbour_1)
-    print("n2",neighbour_2)
+    neighbour_3 = clone_tree(_tree)
+    swap_a = c_a[0]
+    swap_b = c_b[0]    
+    root_node_a = neighbour_3[2+_a]
+    root_node_b = neighbour_3[2+_b]
+    for v in root_node_a:
+        if v[0] == swap_a:
+            v[0] = swap_b
+            neighbour = neighbour_3[2+swap_b]
+            for n in neighbour:
+                if n[0] == _b:
+                    n[0] = _a
+            break
 
-    print_tree(neighbour_1)
-    print('')
-    print_tree(neighbour_2)
+    for v in root_node_b:
+        if v[0] == swap_b:
+            v[0] = swap_a
+            neighbour = neighbour_3[2+swap_a]
+            for n in neighbour:
+                if n[0] == _a:
+                    n[0] = _b
+
+    neighbour_4 = clone_tree(_tree)
+    swap_a = c_a[0]
+    swap_b = c_b[1]    
+    root_node_a = neighbour_4[2+_a]
+    root_node_b = neighbour_4[2+_b]
+    for v in root_node_a:
+        if v[0] == swap_a:
+            v[0] = swap_b
+            neighbour = neighbour_4[2+swap_b]
+            for n in neighbour:
+                if n[0] == _b:
+                    n[0] = _a
+            break
+
+    for v in root_node_b:
+        if v[0] == swap_b:
+            v[0] = swap_a
+            neighbour = neighbour_4[2+swap_a]
+            for n in neighbour:
+                if n[0] == _a:
+                    n[0] = _b
+    #print("n2",neighbour_2)
+    #print(_tree)
+
+    #print("n1",neighbour_1)
+    #print("n2",neighbour_2)
+
+    #print_tree(neighbour_1)
+    #print('')
+    #print_tree(neighbour_2)
+    return[neighbour_1,neighbour_2,neighbour_3,neighbour_4]
     pass
     
     
@@ -956,6 +1006,44 @@ def to_unrooted_tree(_tree):
     print(edges)
     for edge in edges:
         add_edge(_tree,edge[1],edge[0],0)
+
+def large_parsimony(_tree,_strings):
+    print(_strings)
+    min_score = calc_parsimony_score_ex(_tree,_strings)    
+    print(min_score)
+    print_parsinomy_tree(_tree,_strings)
+
+    #find internal edges
+    internal_nodes = []
+    tree_size = _tree[0][0]
+    for i in xrange(tree_size):
+        children = _tree[2+i]
+        if len(children) > 1:
+            internal_nodes.append(i)
+    #print(internal_nodes)
+
+    #find internal edges
+    for i in xrange(tree_size):
+        if i not in internal_nodes:
+            continue
+        
+        children = _tree[2+i]
+        for child in children:
+            if child[0] not in internal_nodes:
+                continue
+            if i < child[0]:
+                print(i, child[0])
+                neibs = get_nearest_neighbours(_tree,i,child[0])
+                for neib in neibs:
+                    score = calc_parsimony_score_ex(neib,_strings)                
+                    min_score = score
+                    print(score)
+                    print_parsinomy_tree(neib,_strings)
+
+                
+
+    
+    pass
 
 def task64():
     # Implement the nearest neighbor interchange heuristic for the Large Parsimony Problem.
@@ -991,13 +1079,11 @@ def task64():
 
     del res_tree[2+root_id]
     res_tree[0][0] -=1
-    #print(res_tree)
     
-    print_parsinomy_tree(res_tree,res[1])
-    print(res[1])
-    print(res_tree)
     to_unrooted_tree(res_tree)
-    calc_parsimony_score_ex(res_tree,res[1])
+    _strings = res[1]
+    
+    large_parsimony(res_tree,_strings)    
 
 if __name__ == "__main__":   
     task64() 
