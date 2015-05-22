@@ -407,7 +407,7 @@ def add_vertex_alone(_tree):
     return v_num
 
 def add_edge(_tree,_start,_end,_len):
-    print("add edge from ", _start," to ",_end,"with len = ",_len)
+    #print("add edge from ", _start," to ",_end,"with len = ",_len)
     
     N = _tree[0][0]
     _tree[_start+2].append([_end,_len])
@@ -416,7 +416,7 @@ def add_edge(_tree,_start,_end,_len):
     _tree[1][1+ _end] += 1
 
 def del_edge(_tree,_start,_end):
-    print("del edge from ", _start," to ",_end)     
+    #print("del edge from ", _start," to ",_end)     
 
     for i in xrange(len(_tree[_start+2])):
         end = _tree[_start+2][i]
@@ -578,6 +578,103 @@ def construct_rooted_parsimony_graph(_size,_data):
         cur_nodes = new_nodes[:]
 
     print(strings)
+    print(_graph)
+
+    return [_graph,strings]
+
+def construct_unrooted_parsimony_graph(_size,_data):
+    _graph = []
+    print(_data)
+    pairs = []
+    cur_len = _size
+    print(cur_len)
+    build_empty_graph(_graph,_size)
+
+    for d in _data:
+        arch_info = d.replace('\n','')        
+        pair = [leaf for leaf in arch_info.split('->')]        
+        pairs.append(pair)
+        
+    cur_empty = 0;
+    strings = {}
+    strings_rev = {}
+    print(pairs)
+    start_int = -1
+    end_int = -1
+    for p in pairs:
+        start_int = to_int(p[0])
+        if start_int <0:
+            #string
+            res = strings_rev.get(p[0],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[0]
+                strings_rev[p[0]] = cur_empty                
+                start_int = cur_empty
+                cur_empty += 1
+            else:
+                start_int = res
+        else:
+            strings[start_int] = ""
+            while start_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
+
+        end_int = to_int(p[1])
+        if end_int <0:
+            #string
+            res = strings_rev.get(p[1],cur_empty);
+            if res == cur_empty:
+                strings[cur_empty] = p[1]
+                strings_rev[p[1]] = cur_empty                 
+                end_int = cur_empty
+                cur_empty += 1
+            else:
+                end_int = res
+        else:
+            strings[end_int] = ""
+            while end_int >= _graph[0][0]:
+                add_vertex_alone(_graph)
+
+        add_edge(_graph,start_int,end_int,0)
+        #add_edge(_graph,end_int,start_int,0)
+    #take last pair
+    del_edge(_graph,start_int,end_int)
+    del_edge(_graph,end_int,start_int)
+
+    root_id = add_vertex_alone(_graph)
+    strings[root_id] = ''
+    add_edge(_graph,root_id,start_int,0)
+    add_edge(_graph,root_id,end_int,0)
+
+    print(_graph)
+
+    tagged = [root_id]
+    cur_nodes = _graph[2+root_id]
+    while len(cur_nodes)>0:
+        new_nodes = []
+        for node in cur_nodes:
+            node_id = node[0]
+            tagged.append(node_id)
+            children = _graph[2+node_id]
+            for child in children:
+                if child[0] in tagged:
+                    #del 
+                    del_edge(_graph,node_id,child[0])
+                    continue
+                else:
+                    new_nodes.append(child)
+
+        cur_nodes = new_nodes[:]
+
+    print(strings)
+
+    del_edge(_graph,root_id,start_int)
+    del_edge(_graph,root_id,end_int)
+
+    add_edge(_graph,start_int,end_int,0)
+
+    del _graph[2+root_id]
+    _graph[0][0] -=1
+
     print(_graph)
 
     return [_graph,strings]
@@ -921,7 +1018,7 @@ def get_nearest_neighbours(_tree,_a,_b):
                     n[0] = _b
     
 
-    neighbour_3 = clone_tree(_tree)
+    """neighbour_3 = clone_tree(_tree)
     swap_a = c_a[0]
     swap_b = c_b[0]    
     root_node_a = neighbour_3[2+_a]
@@ -963,7 +1060,8 @@ def get_nearest_neighbours(_tree,_a,_b):
             neighbour = neighbour_4[2+swap_a]
             for n in neighbour:
                 if n[0] == _a:
-                    n[0] = _b
+                    n[0] = _b"""
+
     #print("n2",neighbour_2)
     #print(_tree)
 
@@ -973,7 +1071,8 @@ def get_nearest_neighbours(_tree,_a,_b):
     #print_tree(neighbour_1)
     #print('')
     #print_tree(neighbour_2)
-    return[neighbour_1,neighbour_2,neighbour_3,neighbour_4]
+    #return[neighbour_1,neighbour_2,neighbour_3,neighbour_4]
+    return[neighbour_1,neighbour_2]
     pass
     
     
@@ -998,29 +1097,32 @@ def task63():
 
 def to_unrooted_tree(_tree):
     edges = []
+    #print(_tree)
     tree_size = _tree[0][0]
     for i in xrange(tree_size):
         tree_edges = _tree[2+i]
+        #print(tree_edges)
         for edge in tree_edges:
             edges.append([i,edge[0]])
-    print(edges)
+    #print(edges)
     for edge in edges:
         add_edge(_tree,edge[1],edge[0],0)
 
 def large_parsimony(_tree,_strings):
-    print(_strings)
-    min_score = calc_parsimony_score_ex(_tree,_strings)    
-    print(min_score)
-    print_parsinomy_tree(_tree,_strings)
+    #print(_strings)
+    #min_score = calc_parsimony_score_ex(_tree,_strings)    
+    #print(min_score)
+    #print_parsinomy_tree(_tree,_strings)
 
     #find internal edges
+    print("start large pars", _tree)
     internal_nodes = []
     tree_size = _tree[0][0]
     for i in xrange(tree_size):
         children = _tree[2+i]
         if len(children) > 1:
             internal_nodes.append(i)
-    #print(internal_nodes)
+    print("internal nodes ", internal_nodes)
 
     #find internal edges
     for i in xrange(tree_size):
@@ -1032,13 +1134,18 @@ def large_parsimony(_tree,_strings):
             if child[0] not in internal_nodes:
                 continue
             if i < child[0]:
-                print(i, child[0])
+                print("edge ", i, child[0])
                 neibs = get_nearest_neighbours(_tree,i,child[0])
                 for neib in neibs:
-                    score = calc_parsimony_score_ex(neib,_strings)                
-                    min_score = score
-                    print(score)
-                    print_parsinomy_tree(neib,_strings)
+                    #score = calc_parsimony_score_ex(neib,_strings)                
+                    #min_score = score
+                    #print(score)
+                    #print_parsinomy_tree(neib,_strings)
+                    copy_strings = _strings.copy()
+                    print("new tree", neib)
+                    print(copy_strings)
+                    return
+                    #small_parsimony(neib,copy_strings)
 
                 
 
@@ -1063,27 +1170,36 @@ def task64():
         data=myfile.readlines()
     
     dim = int(data[0])    
-    res = construct_rooted_parsimony_graph(dim,data[1:])
-    res_tree = small_parsimony(res[0],res[1])
+    res = construct_unrooted_parsimony_graph(dim,data[1:])
+    init_strings = res[1].copy()
+
+    #print("init ",res[0])
+
+    init_tree = clone_tree(res[0])
+    
+    res_tree = small_parsimony(init_tree,res[1])
     #del root
-    print(res_tree)
-    N = res_tree[0][0]
-    root_id = N-1
-    children = res_tree[2+root_id]
-    root_son = children[0][0]
-    root_daughter = children[1][0]
+    print("small pars tree", res_tree)
+    
+    #N = res_tree[0][0]
+    #root_id = N-1
+    #children = res_tree[2+root_id]
+    #root_son = children[0][0]
+    #root_daughter = children[1][0]
 
-    add_edge(res_tree,root_son,root_daughter,0)
-    del_edge(res_tree,root_id,root_son)
-    del_edge(res_tree,root_id,root_daughter)
+    #add_edge(res_tree,root_son,root_daughter,0)
+    #del_edge(res_tree,root_id,root_son)
+    #del_edge(res_tree,root_id,root_daughter)
 
-    del res_tree[2+root_id]
-    res_tree[0][0] -=1
+    #del res_tree[2+root_id]
+    #res_tree[0][0] -=1
     
     to_unrooted_tree(res_tree)
+    print("init tree", res_tree)
+
     _strings = res[1]
-    
-    large_parsimony(res_tree,_strings)    
+    print(init_strings)
+    large_parsimony(res_tree,init_strings)    
 
 if __name__ == "__main__":   
     task64() 

@@ -631,31 +631,41 @@ def hierarchical_clustering(_distances,_size):
     
     return result_tree
 
-def task82():
-    # Implement HierarchicalClustering.
-    # Input: An integer n, followed by an n x n distance matrix.
-    # Output: The result of applying HierarchicalClustering to this distance matrix (using Davg),
-    # with each newly created cluster listed on each line.
+def task91():
+    # Solve the Probability of a Hidden Path Problem.
+    # Given: A hidden path pi followed by the states States and transition matrix Transition of an HMM
+    # ( States, Transition, Emission).
+    # Return: The probability of this path, Pr().
 
-    input_file_name = os.getcwd() + "/part2/data/08/input21.txt"
+    input_file_name = os.getcwd() + "/part2/data/09/input11.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
 
-    dim = int(data[0])    
-    distances=[]
-    for d in data[1:]:
-        row_str = d.replace('\n','').replace('\t',' ')        
-        row_data = [float(i) for i in row_str.split(' ')]
-        distances.append(row_data)
+    path = data[0].replace('\n','')
+    print(path)
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    elems = [e for e in elems_str.split(' ')]
+    print(elems)
+    elem_size = len(elems)
+    mtx = []
+    for i in xrange(elem_size):
+        mtx_str = data[5+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        mtx.append(mtx_els)
 
-    print(distances)
-    hierarchical_clustering(distances,dim)
-
-    #plt.bar(range(0,100), [i for i in xrange(100)])
-    #plt.plot(range(0,100), [i*i for i in xrange(100)])
-    #plt.show()
-
+    res = 0.5
+    for i in xrange(len(path)):
+        if i == 0:
+            continue
+        
+        c_from = path[i-1]
+        c_to = path[i]
+        from_ind = elems.index(c_from)
+        to_ind = elems.index(c_to)        
+        res = res * mtx[from_ind][to_ind]
+    print(res)
+    
 if __name__ == "__main__":   
-    task82() 
+    task91() 
     
