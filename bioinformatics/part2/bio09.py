@@ -665,7 +665,238 @@ def task91():
         to_ind = elems.index(c_to)        
         res = res * mtx[from_ind][to_ind]
     print(res)
+
+def task92():
+    # Solve the Probability of an Outcome Given a Hidden Path Problem.
+    # Input: A string x, followed by the alphabet from which x was constructed, followed by
+    # a hidden path pi, followed by the states States and emission matrix Emission of an HMM
+    # (sigma, States, Transition, Emission).
+    # Output: The conditional probability Pr(x|pi) that x will be emitted given that the HMM
+    # follows the hidden path pi.
+
+    input_file_name = os.getcwd() + "/part2/data/09/input21.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    dest_path = data[0].replace('\n','')    
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+
+    src_path = data[4].replace('\n','')
+    elems_str = data[6].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]
+    
+    print(dest_path)
+    print(src_path)
+    print(dest_elems)
+    print(src_elems)
+    
+    src_elem_size = len(src_elems)
+    mtx = []
+    for i in xrange(src_elem_size):
+        mtx_str = data[9+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        mtx.append(mtx_els)
+
+    print(mtx)
+
+    res = 1
+    for i in xrange(len(src_path)):        
+        c_from = src_path[i]
+        c_to = dest_path[i]
+        from_ind = src_elems.index(c_from)
+        to_ind = dest_elems.index(c_to)        
+        res = res * mtx[from_ind][to_ind]
+    print(res)
+
+
+def get_optimal_path(_transition,_emission,_path,_src,_dest):    
+
+    res_mtx = []
+    path_points = []
+
+    src_elem_size = len(_src)
+    for i in xrange(src_elem_size):
+        res_mtx.append([0 for j in xrange(len(_path))])
+        path_points.append([0 for j in xrange(len(_path))])
+
+    for _iter in xrange(len(_path)):        
+        path_ind = _dest.index(_path[_iter])
+        if _iter == 0:
+            res = 0.5            
+            for i in xrange(len(_src)):
+                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
+        else:
+            for i in xrange(len(_src)):
+                max_val = 0
+                max_ind = -1
+                for j in xrange(len(_src)):
+                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
+                    #if _iter == 4:
+                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
+                    if cur_val > max_val:
+                        max_val = cur_val
+                        max_ind = j
+                res_mtx[i][_iter] = max_val
+                path_points[i][_iter] = max_ind
+
+    for s in res_mtx:
+        str_s = ""
+        for _s in s:
+            if _s>0:
+                #str_s += str(math.log(_s,2)) + " "
+                str_s += str(_s) + " "
+            else:
+                str_s += "0"
+        print(str_s)
+
+    for s in path_points:
+        str_s = ""
+        for _s in s:            
+            str_s += str(_s) + " "
+            
+        print(str_s)
+
+    res_str = ""
+    cur_max_ind = -1
+    max_val = 0        
+    next_point = -1
+    for i in xrange(len(_src)):                
+        if res_mtx[i][-1] > max_val:
+            max_val = res_mtx[i][-1]
+            cur_max_ind = i    
+    res_str += _src[cur_max_ind]
+
+    for i in xrange(len(_path)-2,-1,-1):
+        next_point = path_points[cur_max_ind][i+1]
+        res_str = _src[next_point] + res_str
+        cur_max_ind = next_point
+
+    print(res_str)
+
+def task93():
+    # Implement the Viterbi algorithm solving the Decoding Problem.
+    # Input: A string x, followed by the alphabet from which x was constructed,
+    # followed by the states States, transition matrix Transition, and emission matrix
+    # Emission of an HMM (sigma, States, Transition, Emission).
+    # Output: A path that maximizes the (unconditional) probability Pr(x, pi) over all possible paths pi.
+
+    input_file_name = os.getcwd() + "/part2/data/09/input32.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    path = data[0].replace('\n','')    
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+
+    elems_str = data[4].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]
+    
+    print(path)    
+    print(dest_elems)
+    print(src_elems)
+    
+    src_elem_size = len(src_elems)
+    transition_mtx = []
+    for i in xrange(src_elem_size):
+        mtx_str = data[7+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        transition_mtx.append(mtx_els)
+
+    print(transition_mtx)
+
+    emission_mtx = []
+    dest_elem_size = len(dest_elems)
+    for i in xrange(src_elem_size):
+        ind = 9 + src_elem_size + i        
+        mtx_str = data[ind].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        emission_mtx.append(mtx_els)
+
+
+    print(emission_mtx)
+
+    get_optimal_path(transition_mtx,emission_mtx,path,src_elems,dest_elems)    
+
+
+def likehood(_transition,_emission,_path,_src,_dest):    
+
+    res_mtx = []
+    
+    src_elem_size = len(_src)
+    for i in xrange(src_elem_size):
+        res_mtx.append([0 for j in xrange(len(_path))])
+    
+    for _iter in xrange(len(_path)):        
+        path_ind = _dest.index(_path[_iter])
+        if _iter == 0:
+            res = 0.5            
+            for i in xrange(len(_src)):
+                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
+        else:
+            for i in xrange(len(_src)):
+                max_val = 0
+                max_ind = -1
+                for j in xrange(len(_src)):
+                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
+                    #if _iter == 4:
+                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
+                    res_mtx[i][_iter] += cur_val
+                   
+                
+    print(res_mtx)
+    prob = 0
+    for i in xrange(len(_src)):
+        prob += res_mtx[i][-1]
+    print(prob)
+                
+
+def task94():
+    # Solve the Outcome Likelihood Problem.
+    # Input: A string x, followed by the alphabet from which x was constructed,
+    # followed by the states States, transition matrix Transition, and emission matrix
+    # Emission of an HMM (sum, States, Transition, Emission).
+    # Output: The probability Pr(x) that the HMM emits x.
+
+    input_file_name = os.getcwd() + "/part2/data/09/input41.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    path = data[0].replace('\n','')    
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+
+    elems_str = data[4].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]
+    
+    print(path)    
+    print(dest_elems)
+    print(src_elems)
+    
+    src_elem_size = len(src_elems)
+    transition_mtx = []
+    for i in xrange(src_elem_size):
+        mtx_str = data[7+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        transition_mtx.append(mtx_els)
+
+    print(transition_mtx)
+
+    emission_mtx = []
+    dest_elem_size = len(dest_elems)
+    for i in xrange(src_elem_size):
+        ind = 9 + src_elem_size + i        
+        mtx_str = data[ind].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        emission_mtx.append(mtx_els)
+
+
+    print(emission_mtx)
+    likehood(transition_mtx,emission_mtx,path,src_elems,dest_elems)    
     
 if __name__ == "__main__":   
-    task91() 
+    task94() 
     
