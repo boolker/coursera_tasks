@@ -930,6 +930,15 @@ def calc_centers(_clusters,_dim):
 
     return _centers
 
+def calc_center_of_mass(_points,_dim):
+    _center = [0 for i in xrange(_dim)]
+    for i in xrange(_dim):
+        for c in _points:            
+            _center[i] += c[i]
+        _center[i] = _center[i]/len(_points)       
+
+    return _center
+
 def calc_centers_delta(_old,_cur,_dim):
     delta = 0
     _k = len(_old)
@@ -1069,6 +1078,17 @@ def task731():
             str_c += " "
         print(str_c)
 
+def task_quizz():
+
+    points = [[2,6],[4,9],[5,7],[6,5],[8,3]]
+    centers = [[4,5],[7,4]]
+    print(distortion(points,centers,2))
+    print(max_distance(points,centers,2))
+
+    centers_2 = [[1,3,-1],[9,8,14],[6,2,10],[4,3,1]]
+    print(calc_center_of_mass(centers_2,3))
+
 if __name__ == "__main__":   
-    task731() 
+    #task731() 
+    task_quizz()
     
