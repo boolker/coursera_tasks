@@ -417,7 +417,38 @@ def task94():
     print(emission_mtx)
     likehood(transition_mtx,emission_mtx,path,src_elems,dest_elems)    
     
+def get_next_vertex_and_increment(_graph,_N,_cur,_type):
+    res = -1 
+    N = _graph[0][0]
+    next_vertices = _graph[2+_cur]
+    # 0 - start, 1 - end
+    # 2...2+(N-1) - M1...MN
+    # 2 + N... 2+2*N - I0...IN
+    # 2+ 2*N + 1... 3 + 3*N - 1 - D1...DN
+    print('get_next_vertex_and_increment ',_cur,_type)
+    for v in next_vertices:
+        print(v)
+        if _type == 'm':
+            if v[0]>=2 and v[0]<=(_N+1):
+                v[1] += 1
+                return v[0]
+        elif _type == 'i':
+            if v[0]>=(2+_N) and v[0]<=(2*_N+2):
+                v[1] += 1
+                return v[0]
+        elif _type == 'd':
+            if v[0]>=(3+2*_N) and v[0]<=(3*_N+2):
+                v[1] += 1
+                return v[0]
+        elif _type == 'e':
+            if v[0]==1:
+                v[1] += 1
+                return v[0]
+    print('err')
+    return -1
 
+def get_vertex_ind(_type,_num):
+    if 
 
 def task101():
     # Solve the Profile HMM Problem.
@@ -437,6 +468,7 @@ def task101():
     strings = []    
     
     transition_mtx = []
+    emission_mtx = []
     for d in data[4:]:
         strings.append(d.replace('\n',''))
 
@@ -466,22 +498,22 @@ def task101():
     # 2 + N... 2+2*N - I0...IN
     # 2+ 2*N + 1... 3 + 3*N - 1 - D1...DN
     vertices = {}
-    vertices[0] = 'S'
-    vertices[1] = 'E'
-    cur_ind = 2
+    cur_v = 0
+    vertices[cur_v] = 'S'
+    cur_v += 1
+    vertices[cur_v] = 'I0'
+    cur_v += 1
     for i in xrange(N):
-        vertices[cur_ind] = 'M'+str(i+1)
-        cur_ind += 1
-    vertices[cur_ind] = 'I0'
-    cur_ind += 1
-    for i in xrange(N):
-        vertices[cur_ind] = 'I'+str(i+1)
-        cur_ind += 1
-    for i in xrange(N):
-        vertices[cur_ind] = 'D'+str(i+1)
-        cur_ind += 1
-    print(vertices)
+        vertices[cur_v] = 'M'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'D'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'I'+str(i+1)
+        cur_v += 1
+    vertices[cur_v] = 'E'
 
+    print(vertices)
+    
     build_empty_graph(v_graph,3*(N+1))
     add_edge(v_graph,0,2,0)
     add_edge(v_graph,0,2+N,0)    
@@ -499,7 +531,6 @@ def task101():
 
     # Ii to
     for i in xrange(N):
-        print(i)
         add_edge(v_graph,2+N+i,2+N+i,0) # to I(i)        
         add_edge(v_graph,2+N+i,2+i,0) # to M(i+1)
         add_edge(v_graph,2+N+i,3+2*N+i,0) # to D(i+1)
@@ -518,8 +549,91 @@ def task101():
     add_edge(v_graph,3+3*N-1,2+2*N,0) # to In    
     add_edge(v_graph,3+3*N-1,1,0) # to E
 
-
+    print('initial state of graph')
     print(v_graph)
+
+    v_stats = [{} for i in xrange(len(vertices))]
+
+    for s in strings:
+        cur_vertex = 0
+        print(s)
+        for i in xrange(len(s)):
+            if i in thresh_indices:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'i')
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                #else:
+                #    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
+            else:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                else:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'d')
+        cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'e')      
+
+
+    transtion_row = [0 for i in xrange(len(vertices))]
+    for i in xrange(len(vertices)):
+        transition_mtx.append(transtion_row[:])
+
+    v_num = v_graph[0][0]
+    for i in xrange(v_num):
+        vs = v_graph[2+i]
+        print(vs)
+        _sum = 0
+        for v in vs:
+            _sum += v[1]
+        for v in vs:
+            if _sum > 0:
+                transition_mtx[i][v[0]] = float(v[1])/_sum
+
+    print(v_stats)
+
+    emission_row = [0 for i in xrange(len(alphabet))]
+    for i in xrange(len(vertices)):
+        emission_mtx.append(emission_row[:])
+
+    for i in xrange(len(vertices)):
+        v_stat = v_stats[i]
+        _sum = 0
+        for v in v_stat:
+            _sum += v_stat[v]
+
+        for v in v_stat:
+            ind = alphabet.index(v)
+            if _sum > 0:
+                emission_mtx[i][ind] = float(v_stat[v])/_sum
+    #print transition matrix
+    # print transition header
+    mtx_str = ' '
+    for i in xrange(len(vertices)):
+        mtx_str += '\t'+vertices[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(vertices)):
+        mtx_str = vertices[i]
+        for j in xrange(len(vertices)):
+            mtx_str += '\t'+"{0:.3f}".format(transition_mtx[i][j])
+        print(mtx_str)    
+
+    print('--------')
+    #print emission matrix
+    #print header
+    mtx_str = ' '
+    for i in xrange(len(alphabet)):
+        mtx_str += '\t'+alphabet[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(vertices)):
+        mtx_str = vertices[i]
+        for j in xrange(len(alphabet)):
+            mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
+        print(mtx_str)
 
 if __name__ == "__main__":   
     task101() 
