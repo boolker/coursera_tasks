@@ -448,7 +448,25 @@ def get_next_vertex_and_increment(_graph,_N,_cur,_type):
     return -1
 
 def get_vertex_ind(_type,_num):
-    if 
+    if _type == 'm':
+        if v[0]>=2 and v[0]<=(_N+1):
+            v[1] += 1
+            return v[0]
+    elif _type == 'i':
+        if v[0]>=(2+_N) and v[0]<=(2*_N+2):
+            v[1] += 1
+            return v[0]
+    elif _type == 'd':
+        if v[0]>=(3+2*_N) and v[0]<=(3*_N+2):
+            v[1] += 1
+            return v[0]
+    elif _type == 'e':
+        if v[0]==1:
+            v[1] += 1
+            return v[0]
+    elif _type == 's':
+        return 0
+    return -1
 
 def task101():
     # Solve the Profile HMM Problem.
