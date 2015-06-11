@@ -652,6 +652,7 @@ def task101():
         for j in xrange(len(alphabet)):
             mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
         print(mtx_str)
+        
 
 if __name__ == "__main__":   
     task101() 
