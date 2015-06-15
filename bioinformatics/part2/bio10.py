@@ -72,166 +72,7 @@ def add_edge(_tree,_start,_end,_len):
     _tree[1][1+ _end] += 1
 
 
-def cluster_distance_avg(_distances, cluster_a, cluster_b):
-    res = 0
-    for a in cluster_a:
-        for b in cluster_b:
-            res += _distances[a][b]
-    res = res / (len(cluster_a)*len(cluster_b))
-    return res
-
-def cluster_distance_min(_distances, cluster_a, cluster_b):
-    res = sys.maxint
-    for a in cluster_a:
-        for b in cluster_b:
-            if _distances[a][b] < res:
-                res = _distances[a][b]
-    
-    return res
-
-def hierarchical_clustering(_distances,_size):
-    clusters = []    
-    cluster_ids = []
-    ages = []
-    
-    result_tree = []    
-    for i in xrange(_size):
-        clusters.append([i])    
-        cluster_ids.append(i)
-        ages.append(0)
-
-    build_empty_graph(result_tree,_size)    
-
-    cluster_distances = []
-    for d in _distances:
-        cluster_distances.append(d[:])
-    
-    while len(cluster_ids)>1:
-        # 1. find min distance between clusters
-        min_dist = sys.maxint
-        min_i = -1
-        min_j = -1
-        clusters_len = len(cluster_ids)
-        for i in xrange(clusters_len):
-            for j in xrange(clusters_len):
-                if i<j:
-                    c_i = cluster_ids[i]
-                    c_j = cluster_ids[j]                    
-                    c_distance = cluster_distance(_distances,clusters[c_i],clusters[c_j])
-                    if c_distance< min_dist:
-                        min_dist = c_distance
-                        min_i = c_i
-                        min_j = c_j
-        #print(min_i,min_j,min_dist)
-        if min_i <0 or min_j <0:
-            print("error searching minimum distance")
-            return []
-        # 2. create cluster
-        new_cluster = clusters[min_i][:] + clusters[min_j][:]    
-        #print(new_cluster)            
-        str_c = ""
-        for c in new_cluster:
-            str_c += str(c+1) + " "
-        print(str_c)
-        clusters.append(new_cluster)
-        ages.append(min_dist/2.0)
-        
-        v_num = add_vertex_alone(result_tree)
-        cluster_ids.append(v_num)
-                
-        cluster_ids.remove(min_j)
-        cluster_ids.remove(min_i)
-        
-        add_edge(result_tree,min_i,v_num,0)
-        add_edge(result_tree,min_j,v_num,0)
-        add_edge(result_tree,v_num,min_i,0)
-        add_edge(result_tree,v_num,min_j,0)
-
-    #print(clusters)           
-    
-    return result_tree
-
-def task91():
-    # Solve the Probability of a Hidden Path Problem.
-    # Given: A hidden path pi followed by the states States and transition matrix Transition of an HMM
-    # ( States, Transition, Emission).
-    # Return: The probability of this path, Pr().
-
-    input_file_name = os.getcwd() + "/part2/data/09/input11.txt"
-
-    with open (input_file_name, "r") as myfile:
-        data=myfile.readlines()
-
-    path = data[0].replace('\n','')
-    print(path)
-    elems_str = data[2].replace('\n','').replace('\t',' ')        
-    elems = [e for e in elems_str.split(' ')]
-    print(elems)
-    elem_size = len(elems)
-    mtx = []
-    for i in xrange(elem_size):
-        mtx_str = data[5+i].replace('\n','').replace('\t',' ')        
-        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
-        mtx.append(mtx_els)
-
-    res = 0.5
-    for i in xrange(len(path)):
-        if i == 0:
-            continue
-        
-        c_from = path[i-1]
-        c_to = path[i]
-        from_ind = elems.index(c_from)
-        to_ind = elems.index(c_to)        
-        res = res * mtx[from_ind][to_ind]
-    print(res)
-
-def task92():
-    # Solve the Probability of an Outcome Given a Hidden Path Problem.
-    # Input: A string x, followed by the alphabet from which x was constructed, followed by
-    # a hidden path pi, followed by the states States and emission matrix Emission of an HMM
-    # (sigma, States, Transition, Emission).
-    # Output: The conditional probability Pr(x|pi) that x will be emitted given that the HMM
-    # follows the hidden path pi.
-
-    input_file_name = os.getcwd() + "/part2/data/09/input21.txt"
-
-    with open (input_file_name, "r") as myfile:
-        data=myfile.readlines()
-
-    dest_path = data[0].replace('\n','')    
-    elems_str = data[2].replace('\n','').replace('\t',' ')        
-    dest_elems = [e for e in elems_str.split(' ')]
-
-    src_path = data[4].replace('\n','')
-    elems_str = data[6].replace('\n','').replace('\t',' ')        
-    src_elems = [e for e in elems_str.split(' ')]
-    
-    print(dest_path)
-    print(src_path)
-    print(dest_elems)
-    print(src_elems)
-    
-    src_elem_size = len(src_elems)
-    mtx = []
-    for i in xrange(src_elem_size):
-        mtx_str = data[9+i].replace('\n','').replace('\t',' ')        
-        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
-        mtx.append(mtx_els)
-
-    print(mtx)
-
-    res = 1
-    for i in xrange(len(src_path)):        
-        c_from = src_path[i]
-        c_to = dest_path[i]
-        from_ind = src_elems.index(c_from)
-        to_ind = dest_elems.index(c_to)        
-        res = res * mtx[from_ind][to_ind]
-    print(res)
-
-
-def get_optimal_path(_transition,_emission,_path,_src,_dest):    
+def get_optimal_path_ex(_transition,_emission,_path,_src,_dest):    
 
     res_mtx = []
     path_points = []
@@ -417,7 +258,7 @@ def task94():
     print(emission_mtx)
     likehood(transition_mtx,emission_mtx,path,src_elems,dest_elems)    
     
-def get_next_vertex_and_increment(_graph,_N,_cur,_type):
+def get_next_vertex_and_increment(_graph,_vertices,_cur,_type):
     res = -1 
     N = _graph[0][0]
     next_vertices = _graph[2+_cur]
@@ -425,46 +266,32 @@ def get_next_vertex_and_increment(_graph,_N,_cur,_type):
     # 2...2+(N-1) - M1...MN
     # 2 + N... 2+2*N - I0...IN
     # 2+ 2*N + 1... 3 + 3*N - 1 - D1...DN
-    print('get_next_vertex_and_increment ',_cur,_type)
+    #print('get_next_vertex_and_increment ',_cur,_type)
     for v in next_vertices:
-        print(v)
-        if _type == 'm':
-            if v[0]>=2 and v[0]<=(_N+1):
-                v[1] += 1
-                return v[0]
-        elif _type == 'i':
-            if v[0]>=(2+_N) and v[0]<=(2*_N+2):
-                v[1] += 1
-                return v[0]
-        elif _type == 'd':
-            if v[0]>=(3+2*_N) and v[0]<=(3*_N+2):
-                v[1] += 1
-                return v[0]
-        elif _type == 'e':
-            if v[0]==1:
-                v[1] += 1
-                return v[0]
+        #print(v)
+        cur_v = _vertices[v[0]]
+        if cur_v[0] == _type:
+            v[1] +=1
+            return v[0]
+        
     print('err')
     return -1
 
-def get_vertex_ind(_type,_num):
-    if _type == 'm':
-        if v[0]>=2 and v[0]<=(_N+1):
-            v[1] += 1
-            return v[0]
-    elif _type == 'i':
-        if v[0]>=(2+_N) and v[0]<=(2*_N+2):
-            v[1] += 1
-            return v[0]
-    elif _type == 'd':
-        if v[0]>=(3+2*_N) and v[0]<=(3*_N+2):
-            v[1] += 1
-            return v[0]
-    elif _type == 'e':
-        if v[0]==1:
-            v[1] += 1
-            return v[0]
-    elif _type == 's':
+def get_vertex_ind(_type,_num,_N):
+    # 0 - start, 1 - end
+    # 1 + _num*3 - Inum
+    # 2 + (_num-1)*3 - Mnum
+    # 3 + (_num-1)*3 - Dnum
+    # 1+1+3*_N - end
+    if _type == 'M':
+        return 2+(_num-1)*3
+    elif _type == 'I':
+        return 1+(_num)*3
+    elif _type == 'D':
+        return 3+(_num-1)*3
+    elif _type == 'E':
+        return 2+_N*3
+    elif _type == 'S':
         return 0
     return -1
 
@@ -474,7 +301,7 @@ def task101():
     # Alignment whose strings are formed from sum.
     # Output: The transition matrix followed by the emission matrix of HMM(Alignment, theta).
 
-    input_file_name = os.getcwd() + "/part2/data/10/input1.txt"
+    input_file_name = os.getcwd() + "/part2/data/10/input11.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
@@ -510,6 +337,7 @@ def task101():
     print(thresh_indices)
 
     N = str_len - len(thresh_indices)
+    print(N)
     v_graph = []
     # 0 - start, 1 - end
     # 2...2+(N-1) - M1...MN
@@ -533,42 +361,43 @@ def task101():
     print(vertices)
     
     build_empty_graph(v_graph,3*(N+1))
-    add_edge(v_graph,0,2,0)
-    add_edge(v_graph,0,2+N,0)    
-    add_edge(v_graph,0,3+2*N,0)
+    add_edge(v_graph,0,get_vertex_ind('I',0,N),0)
+    add_edge(v_graph,0,get_vertex_ind('M',1,N),0)
+    add_edge(v_graph,0,get_vertex_ind('D',1,N),0)
 
     # Mi to...
     for i in xrange(N-1):
-        add_edge(v_graph,2+i,3+N+i,0) # to Ii
-        add_edge(v_graph,2+i,2+i+1,0) # to M(i+1)
-        add_edge(v_graph,2+i,3+2*N + i+1,0) # to D(i+1)
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
 
     #Mn to
-    add_edge(v_graph,2+N-1,2+2*N,0) # to In    
-    add_edge(v_graph,2+N-1,1,0) # to E
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
 
     # Ii to
     for i in xrange(N):
-        add_edge(v_graph,2+N+i,2+N+i,0) # to I(i)        
-        add_edge(v_graph,2+N+i,2+i,0) # to M(i+1)
-        add_edge(v_graph,2+N+i,3+2*N+i,0) # to D(i+1)
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('I',i,N),0) # to I(i)        
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('M',i+1,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
 
     #In to
-    add_edge(v_graph,2+2*N,2+2*N,0) # to In    
-    add_edge(v_graph,2+2*N,1,0) # to E
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
 
     #Di to
     for i in xrange(N-1):
-        add_edge(v_graph,3+2*N+i,3+N+i,0) # to Ii
-        add_edge(v_graph,3+2*N+i,2+i+1,0) # to M(i+1)
-        add_edge(v_graph,3+2*N+i,3+2*N+i+1,0) # to D(i+1)
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
 
     #Dn to
-    add_edge(v_graph,3+3*N-1,2+2*N,0) # to In    
-    add_edge(v_graph,3+3*N-1,1,0) # to E
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
 
     print('initial state of graph')
     print(v_graph)
+    #return
 
     v_stats = [{} for i in xrange(len(vertices))]
 
@@ -578,7 +407,7 @@ def task101():
         for i in xrange(len(s)):
             if i in thresh_indices:
                 if s[i] in alphabet:
-                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'i')
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'I')
                     v_stat = v_stats[cur_vertex]
                     cur_val = v_stat.get(s[i],0)
                     v_stat[s[i]] = cur_val + 1
@@ -586,13 +415,14 @@ def task101():
                 #    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
             else:
                 if s[i] in alphabet:
-                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'M')
+                    print(cur_vertex)
                     v_stat = v_stats[cur_vertex]
                     cur_val = v_stat.get(s[i],0)
                     v_stat[s[i]] = cur_val + 1
                 else:
-                    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'d')
-        cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'e')      
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'D')
+        cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'E')      
 
 
     transtion_row = [0 for i in xrange(len(vertices))]
@@ -653,7 +483,395 @@ def task101():
             mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
         print(mtx_str)
         
+def task102():
+    # Solve the Profile HMM Problem.
+    # Input: A threshold theta, followed by an alphabet sum, followed by a multiple alignment
+    # Alignment whose strings are formed from sum.
+    # Output: The transition matrix followed by the emission matrix of HMM(Alignment, theta).
+
+    input_file_name = os.getcwd() + "/part2/data/10/input21.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    params = data[0].replace('\n','').split(' ')
+    threshold = float(params[0])
+    pseudocount = float(params[1])    
+    print(threshold,pseudocount)    
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    alphabet = [e for e in elems_str.split(' ')]
+    
+    strings = []    
+    
+    transition_mtx = []
+    emission_mtx = []
+    for d in data[4:]:
+        strings.append(d.replace('\n',''))
+
+    print(threshold)    
+    print(alphabet)
+    print(strings)
+
+    str_len = len(strings[0])
+    thresh_indices = []
+    for i in xrange(str_len):
+        num_in = 0.0
+        num_out = 0.0
+        for s in strings:
+            if s[i] in alphabet:
+                num_in += 1
+            else:
+                num_out += 1
+        res = num_out/len(strings)                
+        if res > threshold:
+            thresh_indices.append(i)
+    print(thresh_indices)
+
+    N = str_len - len(thresh_indices)
+    print(N)
+    v_graph = []
+    # 0 - start, 1 - end
+    # 2...2+(N-1) - M1...MN
+    # 2 + N... 2+2*N - I0...IN
+    # 2+ 2*N + 1... 3 + 3*N - 1 - D1...DN
+    vertices = {}
+    cur_v = 0
+    vertices[cur_v] = 'S'
+    cur_v += 1
+    vertices[cur_v] = 'I0'
+    cur_v += 1
+    for i in xrange(N):
+        vertices[cur_v] = 'M'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'D'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'I'+str(i+1)
+        cur_v += 1
+    vertices[cur_v] = 'E'
+
+    print(vertices)
+    
+    build_empty_graph(v_graph,3*(N+1))
+    add_edge(v_graph,0,get_vertex_ind('I',0,N),0)
+    add_edge(v_graph,0,get_vertex_ind('M',1,N),0)
+    add_edge(v_graph,0,get_vertex_ind('D',1,N),0)
+
+    # Mi to...
+    for i in xrange(N-1):
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+
+    #Mn to
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    # Ii to
+    for i in xrange(N):
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('I',i,N),0) # to I(i)        
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('M',i+1,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
+
+    #In to
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    #Di to
+    for i in xrange(N-1):
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+
+    #Dn to
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    print('initial state of graph')
+    print(v_graph)
+    #return
+
+    v_stats = [{} for i in xrange(len(vertices))]
+
+    for s in strings:
+        cur_vertex = 0
+        print(s)
+        for i in xrange(len(s)):
+            if i in thresh_indices:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'I')
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                #else:
+                #    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
+            else:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'M')
+                    print(cur_vertex)
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                else:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'D')
+        cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'E')      
+
+
+    transtion_row = [0 for i in xrange(len(vertices))]
+    for i in xrange(len(vertices)):
+        transition_mtx.append(transtion_row[:])
+
+    v_num = v_graph[0][0]
+    for i in xrange(v_num):
+        vs = v_graph[2+i]
+        print(vs)
+        _sum = 0
+        for v in vs:
+            _sum += v[1]
+
+        for v in vs:
+            if _sum > 0:
+                transition_mtx[i][v[0]] = float(v[1])/_sum
+        _sum = 0
+        for v in vs:
+            _sum += transition_mtx[i][v[0]] + pseudocount
+        for v in vs:
+            transition_mtx[i][v[0]] = float(transition_mtx[i][v[0]]+pseudocount)/_sum
+
+    print(v_stats)
+
+    emission_row = [0 for i in xrange(len(alphabet))]
+    for i in xrange(len(vertices)):
+        emission_mtx.append(emission_row[:])
+
+    for i in xrange(len(vertices)):
+        v_stat = v_stats[i]
+        print(i, v_stat)
+        _sum = 0
+        for v in v_stat:
+            _sum += v_stat[v]
+
+        for v in v_stat:
+            ind = alphabet.index(v)
+            if _sum > 0:
+                emission_mtx[i][ind] = float(v_stat[v])/_sum
+        vertex = vertices[i]
+        if vertex[0] == 'M' or vertex[0] == 'I':
+            _sum = 0
+            for a in alphabet:
+                ind = alphabet.index(a)
+                _sum += emission_mtx[i][ind] + pseudocount
+            for a in alphabet:
+                ind = alphabet.index(a)
+                emission_mtx[i][ind] = float(emission_mtx[i][ind]+pseudocount)/_sum
+            
+    #print transition matrix
+    # print transition header
+    mtx_str = ' '
+    for i in xrange(len(vertices)):
+        mtx_str += '\t'+vertices[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(vertices)):
+        mtx_str = vertices[i]
+        for j in xrange(len(vertices)):
+            mtx_str += '\t'+"{0:.3f}".format(transition_mtx[i][j])
+        print(mtx_str)    
+
+    print('--------')
+    #print emission matrix
+    #print header
+    mtx_str = ' '
+    for i in xrange(len(alphabet)):
+        mtx_str += '\t'+alphabet[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(vertices)):
+        mtx_str = vertices[i]
+        for j in xrange(len(alphabet)):
+            mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
+        print(mtx_str)
+
+       
+def task103():
+    # Solve the Sequence Alignment with Profile HMM Problem.
+    # Input: A string x followed by a threshold  and a pseudocount , followed by an
+    # alphabet sigma, followed by a multiple alignment Alignment whose strings are formed from sigma. 
+    # Output: An optimal hidden path emitting x in HMM(Alignment, thet, sig).
+
+    input_file_name = os.getcwd() + "/part2/data/10/input3.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    path = data[0].replace('\n','')
+    params = data[2].replace('\n','').split(' ')
+    threshold = float(params[0])
+    pseudocount = float(params[1])    
+    print(threshold,pseudocount)    
+    elems_str = data[4].replace('\n','').replace('\t',' ')        
+    alphabet = [e for e in elems_str.split(' ')]
+    
+    strings = []    
+    
+    transition_mtx = []
+    emission_mtx = []
+    for d in data[6:]:
+        strings.append(d.replace('\n',''))
+
+    print(path)
+    print(threshold)    
+    print(alphabet)
+    print(strings)
+
+    str_len = len(strings[0])
+    thresh_indices = []
+    for i in xrange(str_len):
+        num_in = 0.0
+        num_out = 0.0
+        for s in strings:
+            if s[i] in alphabet:
+                num_in += 1
+            else:
+                num_out += 1
+        res = num_out/len(strings)                
+        if res > threshold:
+            thresh_indices.append(i)
+    print(thresh_indices)
+
+    N = str_len - len(thresh_indices)
+    print(N)
+    v_graph = []
+    # 0 - start, 1 - end
+    # 2...2+(N-1) - M1...MN
+    # 2 + N... 2+2*N - I0...IN
+    # 2+ 2*N + 1... 3 + 3*N - 1 - D1...DN
+    vertices = {}
+    cur_v = 0
+    vertices[cur_v] = 'S'
+    cur_v += 1
+    vertices[cur_v] = 'I0'
+    cur_v += 1
+    for i in xrange(N):
+        vertices[cur_v] = 'M'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'D'+str(i+1)
+        cur_v += 1
+        vertices[cur_v] = 'I'+str(i+1)
+        cur_v += 1
+    vertices[cur_v] = 'E'
+
+    print(vertices)
+    
+    build_empty_graph(v_graph,3*(N+1))
+    add_edge(v_graph,0,get_vertex_ind('I',0,N),0)
+    add_edge(v_graph,0,get_vertex_ind('M',1,N),0)
+    add_edge(v_graph,0,get_vertex_ind('D',1,N),0)
+
+    # Mi to...
+    for i in xrange(N-1):
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('M',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+
+    #Mn to
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    # Ii to
+    for i in xrange(N):
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('I',i,N),0) # to I(i)        
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('M',i+1,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
+
+    #In to
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    #Di to
+    for i in xrange(N-1):
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+        add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+
+    #Dn to
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('I',N,N),0) # to In    
+    add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    v_stats = [{} for i in xrange(len(vertices))]
+
+    for s in strings:
+        cur_vertex = 0
+        #print(s)
+        for i in xrange(len(s)):
+            if i in thresh_indices:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'I')
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                #else:
+                #    cur_vertex = get_next_vertex_and_increment(v_graph,N,cur_vertex,'m')
+            else:
+                if s[i] in alphabet:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'M')
+                    v_stat = v_stats[cur_vertex]
+                    cur_val = v_stat.get(s[i],0)
+                    v_stat[s[i]] = cur_val + 1
+                else:
+                    cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'D')
+        cur_vertex = get_next_vertex_and_increment(v_graph,vertices,cur_vertex,'E')      
+
+
+    transtion_row = [0 for i in xrange(len(vertices))]
+    for i in xrange(len(vertices)):
+        transition_mtx.append(transtion_row[:])
+
+    v_num = v_graph[0][0]
+    for i in xrange(v_num):
+        vs = v_graph[2+i]
+        _sum = 0
+        for v in vs:
+            _sum += v[1]
+
+        for v in vs:
+            if _sum > 0:
+                transition_mtx[i][v[0]] = float(v[1])/_sum
+        _sum = 0
+        for v in vs:
+            _sum += transition_mtx[i][v[0]] + pseudocount
+        for v in vs:
+            transition_mtx[i][v[0]] = float(transition_mtx[i][v[0]]+pseudocount)/_sum
+
+    emission_row = [0 for i in xrange(len(alphabet))]
+    for i in xrange(len(vertices)):
+        emission_mtx.append(emission_row[:])
+
+    for i in xrange(len(vertices)):
+        v_stat = v_stats[i]
+        _sum = 0
+        for v in v_stat:
+            _sum += v_stat[v]
+
+        for v in v_stat:
+            ind = alphabet.index(v)
+            if _sum > 0:
+                emission_mtx[i][ind] = float(v_stat[v])/_sum
+        vertex = vertices[i]
+        if vertex[0] == 'M' or vertex[0] == 'I':
+            _sum = 0
+            for a in alphabet:
+                ind = alphabet.index(a)
+                _sum += emission_mtx[i][ind] + pseudocount
+            for a in alphabet:
+                ind = alphabet.index(a)
+                emission_mtx[i][ind] = float(emission_mtx[i][ind]+pseudocount)/_sum
+            
+    print(v_graph)
+    vertices_elems = []
+    for v in vertices:
+        vertices_elems.append(vertices[v])
+    #get_optimal_path_ex(transition_mtx,emission_mtx,path,vertices_elems,alphabet)
 
 if __name__ == "__main__":   
-    task101() 
+    task103() 
     
