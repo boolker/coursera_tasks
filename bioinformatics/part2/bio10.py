@@ -72,69 +72,6 @@ def add_edge(_tree,_start,_end,_len):
     _tree[1][1+ _end] += 1
 
 
-def get_optimal_path_ex(_transition,_emission,_path,_src,_dest):    
-
-    res_mtx = []
-    path_points = []
-
-    src_elem_size = len(_src)
-    for i in xrange(src_elem_size):
-        res_mtx.append([0 for j in xrange(len(_path))])
-        path_points.append([0 for j in xrange(len(_path))])
-
-    for _iter in xrange(len(_path)):        
-        path_ind = _dest.index(_path[_iter])
-        if _iter == 0:
-            res = 0.5            
-            for i in xrange(len(_src)):
-                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
-        else:
-            for i in xrange(len(_src)):
-                max_val = 0
-                max_ind = -1
-                for j in xrange(len(_src)):
-                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
-                    #if _iter == 4:
-                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
-                    if cur_val > max_val:
-                        max_val = cur_val
-                        max_ind = j
-                res_mtx[i][_iter] = max_val
-                path_points[i][_iter] = max_ind
-
-    for s in res_mtx:
-        str_s = ""
-        for _s in s:
-            if _s>0:
-                #str_s += str(math.log(_s,2)) + " "
-                str_s += str(_s) + " "
-            else:
-                str_s += "0"
-        print(str_s)
-
-    for s in path_points:
-        str_s = ""
-        for _s in s:            
-            str_s += str(_s) + " "
-            
-        print(str_s)
-
-    res_str = ""
-    cur_max_ind = -1
-    max_val = 0        
-    next_point = -1
-    for i in xrange(len(_src)):                
-        if res_mtx[i][-1] > max_val:
-            max_val = res_mtx[i][-1]
-            cur_max_ind = i    
-    res_str += _src[cur_max_ind]
-
-    for i in xrange(len(_path)-2,-1,-1):
-        next_point = path_points[cur_max_ind][i+1]
-        res_str = _src[next_point] + res_str
-        cur_max_ind = next_point
-
-    print(res_str)
 
 def task93():
     # Implement the Viterbi algorithm solving the Decoding Problem.
@@ -691,7 +628,93 @@ def task102():
             mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
         print(mtx_str)
 
-       
+
+def get_optimal_path_ex(_transition,_emission,_path,_src,_dest):    
+
+    res_mtx = []
+    path_points = []
+
+    src_elem_size = len(_src)
+    for i in xrange(src_elem_size):
+        res_mtx.append([0 for j in xrange(len(_path))])
+        path_points.append([0 for j in xrange(len(_path))])
+
+    for _iter in xrange(len(_path)):        
+        path_ind = _dest.index(_path[_iter])
+        if _iter == 0:
+            res = 0.5            
+            for i in xrange(len(_src)):
+                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
+        else:
+            for i in xrange(len(_src)):
+                max_val = 0
+                max_ind = -1
+                for j in xrange(len(_src)):
+                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
+                    #if _iter == 4:
+                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
+                    if cur_val > max_val:
+                        max_val = cur_val
+                        max_ind = j
+                res_mtx[i][_iter] = max_val
+                path_points[i][_iter] = max_ind
+
+    for s in res_mtx:
+        str_s = ""
+        for _s in s:
+            if _s>0:
+                #str_s += str(math.log(_s,2)) + " "
+                str_s += str(_s) + " "
+            else:
+                str_s += "0"
+        print(str_s)
+
+    for s in path_points:
+        str_s = ""
+        for _s in s:            
+            str_s += str(_s) + " "
+            
+        print(str_s)
+
+    res_str = ""
+    cur_max_ind = -1
+    max_val = 0        
+    next_point = -1
+    for i in xrange(len(_src)):                
+        if res_mtx[i][-1] > max_val:
+            max_val = res_mtx[i][-1]
+            cur_max_ind = i    
+    res_str += _src[cur_max_ind]
+
+    for i in xrange(len(_path)-2,-1,-1):
+        next_point = path_points[cur_max_ind][i+1]
+        res_str = _src[next_point] + res_str
+        cur_max_ind = next_point
+
+    print(res_str)
+
+def get_vertex_ind_ex(_type,_num,_N,_iter,_start,_cols):
+    # 0 - start, 1 - end
+    # 1 + _num*3 - Inum
+    # 2 + (_num-1)*3 - Mnum
+    # 3 + (_num-1)*3 - Dnum
+    # 1+1+3*_N - end
+    res = 0
+    if _type == 'M':
+        res = 1+(_num-1)*3
+    elif _type == 'I':
+        res =  (_num)*3
+    elif _type == 'D':
+        if _iter == 0:
+            return _num
+        res =  2+(_num-1)*3
+    elif _type == 'E':
+        return _start + _cols*_N 
+    elif _type == 'S':
+        return 0 
+    res += (_iter-1)*_N + _start
+    return res
+
 def task103():
     # Solve the Sequence Alignment with Profile HMM Problem.
     # Input: A string x followed by a threshold  and a pseudocount , followed by an
@@ -734,7 +757,7 @@ def task103():
             else:
                 num_out += 1
         res = num_out/len(strings)                
-        if res > threshold:
+        if res >= threshold:
             thresh_indices.append(i)
     print(thresh_indices)
 
@@ -866,10 +889,123 @@ def task103():
                 ind = alphabet.index(a)
                 emission_mtx[i][ind] = float(emission_mtx[i][ind]+pseudocount)/_sum
             
-    print(v_graph)
+    #print(v_graph)
     vertices_elems = []
     for v in vertices:
         vertices_elems.append(vertices[v])
+
+    '''N = v_graph[0][0]
+    for i in xrange(N):
+        v_s = v_graph[2+i]
+        for v in v_s:
+            v[1] = transition_mtx[i][v[0]]
+    print(v_graph)'''    
+
+    vit_graph = []
+    v_count = len(path)*(v_num-2) + 2 + N #len(path) columns * N-2 lines + start + end + silent column
+    print(len(path),v_num,N,v_count)
+    build_empty_graph(vit_graph,v_count) # 
+    #fill graph
+
+    map_vertices = [0]
+    for i in xrange(N):
+        map_vertices.append(get_vertex_ind('D',i+1,N))
+    for i in xrange(len(path)):
+        for j in xrange(1,v_num-1):
+            map_vertices.append(j)
+    map_vertices.append(get_vertex_ind('E',0,N))
+    
+    print(map_vertices)
+    print(len(map_vertices))
+    _iter = 1
+    for i in xrange(N+1):
+        if i < N:
+            #to Di+1
+            j = get_vertex_ind_ex('D',i+1,v_num,0,N+1,N)
+            real_i = map_vertices[i]
+            real_j = map_vertices[j]
+            print('D',i,j,real_i,real_j)        
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
+        
+            #to Mi+1
+            j = get_vertex_ind_ex('M',i+1,v_num,_iter,N+1,N)
+            real_i = map_vertices[i]
+            real_j = map_vertices[j]
+            print('M',i,j,real_i,real_j)        
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
+
+            #to Ii
+            j = get_vertex_ind_ex('I',i,v_num,_iter,N+1,N)
+            real_i = map_vertices[i]
+            real_j = map_vertices[j]
+            print('I',i,j,real_i,real_j)
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
+        
+        if i == N:
+            #to Ii
+            j = get_vertex_ind_ex('I',i,v_num,_iter,N+1,N)
+            real_i = map_vertices[i]
+            real_j = map_vertices[j]
+            print('I',i,j,real_i,real_j)
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
+
+    states_num = v_num - 2
+    for j in xrange(len(path)-1):
+        _iter = j+1
+         # Mi to...
+        for i in xrange(N-1):
+            _i = get_vertex_ind_ex('M',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('I',i+1,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            print('iter ',_iter,', M',i+1,' to I',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Ii next col
+
+            _i = get_vertex_ind_ex('M',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('M',i+2,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            print('iter ',_iter,', M',i+1,' to M',i+2, _i,_j,real_i,real_j)
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Mi+1 next col
+
+            _i = get_vertex_ind_ex('M',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('D',i+2,states_num,_iter,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            print('iter ',_iter,', M',i+1,' to D',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Di+1 cur col
+
+        break
+
+        #Mn to
+        add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('I',N,N),0) # to In    
+        add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
+
+        # Ii to
+        for i in xrange(N):
+            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('I',i,N),0) # to I(i)        
+            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('M',i+1,N),0) # to M(i+1)
+            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
+
+        #In to
+        add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('I',N,N),0) # to In    
+        add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
+
+        #Di to
+        for i in xrange(N-1):
+            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+
+        #Dn to
+        add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('I',N,N),0) # to In    
+        add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
+
+    #for cur_col in xrange(len(path)):
+    #print(vit_graph)    
+    #add_edge(v_graph,0,,0)
+    #add_edge(v_graph,0,get_vertex_ind('M',1,N),0)
+    #add_edge(v_graph,0,get_vertex_ind('D',1,N),0)
     #get_optimal_path_ex(transition_mtx,emission_mtx,path,vertices_elems,alphabet)
 
 if __name__ == "__main__":   

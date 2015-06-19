@@ -898,5 +898,5 @@ def task94():
     likehood(transition_mtx,emission_mtx,path,src_elems,dest_elems)    
     
 if __name__ == "__main__":   
-    task94() 
+    task93() 
     
