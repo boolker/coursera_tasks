@@ -628,70 +628,62 @@ def task102():
             mtx_str += '\t'+"{0:.3f}".format(emission_mtx[i][j])
         print(mtx_str)
 
+def get_iter_by_index(_ind,_N,_v_num):
+    if _ind < _N:
+        return -1
+    else:
+        return (_ind - _N - 1) / _v_num
 
-def get_optimal_path_ex(_transition,_emission,_path,_src,_dest):    
+def get_optimal_path_ex(_path,_alphabet,_graph,_emission,_vertices,_N,_v_num):    
 
-    res_mtx = []
-    path_points = []
+    res = []
+    path = {}
 
-    src_elem_size = len(_src)
-    for i in xrange(src_elem_size):
-        res_mtx.append([0 for j in xrange(len(_path))])
-        path_points.append([0 for j in xrange(len(_path))])
+    N = _graph[0][0]
+    '''for i in xrange(N):
+        if i == 0:
+            path[i] = [-1,1]
+        sources = _graph[2+N+i]
+        max_val = 0
+        max_s = -1
+        for s in sources:
+            cur_iter = get_iter_by_index(i,_N,_v_num)
+            prev_iter = get_iter_by_index(s[0],_N,_v_num)
+            prev_val = path.get(s[0],[-1,0])
+            trans_val = 0
 
-    for _iter in xrange(len(_path)):        
-        path_ind = _dest.index(_path[_iter])
-        if _iter == 0:
-            res = 0.5            
-            for i in xrange(len(_src)):
-                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
-        else:
-            for i in xrange(len(_src)):
-                max_val = 0
-                max_ind = -1
-                for j in xrange(len(_src)):
-                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
-                    #if _iter == 4:
-                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
-                    if cur_val > max_val:
-                        max_val = cur_val
-                        max_ind = j
-                res_mtx[i][_iter] = max_val
-                path_points[i][_iter] = max_ind
+            print(i,s[0],cur_iter,prev_iter,prev_val)
+            cur_val = prev_val[1]
+        #print(i,_graph[2+N+i])'''
 
-    for s in res_mtx:
-        str_s = ""
-        for _s in s:
-            if _s>0:
-                #str_s += str(math.log(_s,2)) + " "
-                str_s += str(_s) + " "
-            else:
-                str_s += "0"
-        print(str_s)
-
-    for s in path_points:
-        str_s = ""
-        for _s in s:            
-            str_s += str(_s) + " "
+    path[0] = [-1,1]
+    for i in xrange(N):
+        dests = _graph[2+i]
+        for d in dests:
+            cur_iter = get_iter_by_index(i,_N,_v_num)
+            next_iter = get_iter_by_index(d[0],_N,_v_num)
+            trans_val = d[1]
+            emission_val = 1
+            if next_iter != cur_iter:
+                if next_iter < len(_path):
+                    val_ind = _alphabet.index(_path[next_iter])
+                    emission_val = _emission[_vertices[d[0]]][val_ind]
+            cur_max_val = path.get(d[0],[-1,0])
+            prev_val = path.get(i,[-1,0])
+            cur_val = prev_val[1]*trans_val*emission_val
+            print(i,d[0],trans_val,emission_val,cur_iter,next_iter,cur_max_val,cur_val)
             
-        print(str_s)
+            if cur_val > cur_max_val[1]:
+                path[d[0]] = [i,cur_val]
 
-    res_str = ""
-    cur_max_ind = -1
-    max_val = 0        
-    next_point = -1
-    for i in xrange(len(_src)):                
-        if res_mtx[i][-1] > max_val:
-            max_val = res_mtx[i][-1]
-            cur_max_ind = i    
-    res_str += _src[cur_max_ind]
+    prev_val = N-1
+    while prev_val > 0:
+        prev_val = (path[prev_val])[0]
+        res =  [prev_val] + res        
+    print(res)
 
-    for i in xrange(len(_path)-2,-1,-1):
-        next_point = path_points[cur_max_ind][i+1]
-        res_str = _src[next_point] + res_str
-        cur_max_ind = next_point
-
-    print(res_str)
+        
+    return res
 
 def get_vertex_ind_ex(_type,_num,_N,_iter,_start,_cols):
     # 0 - start, 1 - end
@@ -721,7 +713,7 @@ def task103():
     # alphabet sigma, followed by a multiple alignment Alignment whose strings are formed from sigma. 
     # Output: An optimal hidden path emitting x in HMM(Alignment, thet, sig).
 
-    input_file_name = os.getcwd() + "/part2/data/10/input3.txt"
+    input_file_name = os.getcwd() + "/part2/data/10/input31.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
@@ -924,21 +916,21 @@ def task103():
             j = get_vertex_ind_ex('D',i+1,v_num,0,N+1,N)
             real_i = map_vertices[i]
             real_j = map_vertices[j]
-            print('D',i,j,real_i,real_j)        
+            #print('D',i,j,real_i,real_j)        
             add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
         
             #to Mi+1
             j = get_vertex_ind_ex('M',i+1,v_num,_iter,N+1,N)
             real_i = map_vertices[i]
             real_j = map_vertices[j]
-            print('M',i,j,real_i,real_j)        
+            #print('M',i,j,real_i,real_j)        
             add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
 
             #to Ii
             j = get_vertex_ind_ex('I',i,v_num,_iter,N+1,N)
             real_i = map_vertices[i]
             real_j = map_vertices[j]
-            print('I',i,j,real_i,real_j)
+            #print('I',i,j,real_i,real_j)
             add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
         
         if i == N:
@@ -946,7 +938,7 @@ def task103():
             j = get_vertex_ind_ex('I',i,v_num,_iter,N+1,N)
             real_i = map_vertices[i]
             real_j = map_vertices[j]
-            print('I',i,j,real_i,real_j)
+            #print('I',i,j,real_i,real_j)
             add_edge(vit_graph,i,j,transition_mtx[real_i][real_j])
 
     states_num = v_num - 2
@@ -958,56 +950,342 @@ def task103():
             _j = get_vertex_ind_ex('I',i+1,states_num,_iter+1,N+1,N)
             real_i = map_vertices[_i]
             real_j = map_vertices[_j]
-            print('iter ',_iter,', M',i+1,' to I',i+1, _i,_j,real_i,real_j)
-            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Ii next col
+            #print('iter ',_iter,', M',i+1,' to I',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
 
             _i = get_vertex_ind_ex('M',i+1,states_num,_iter,N+1,N)
             _j = get_vertex_ind_ex('M',i+2,states_num,_iter+1,N+1,N)
             real_i = map_vertices[_i]
             real_j = map_vertices[_j]
-            print('iter ',_iter,', M',i+1,' to M',i+2, _i,_j,real_i,real_j)
-            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Mi+1 next col
+            #print('iter ',_iter,', M',i+1,' to M',i+2, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Mi+1 next col
 
             _i = get_vertex_ind_ex('M',i+1,states_num,_iter,N+1,N)
             _j = get_vertex_ind_ex('D',i+2,states_num,_iter,N+1,N)
             real_i = map_vertices[_i]
             real_j = map_vertices[_j]
-            print('iter ',_iter,', M',i+1,' to D',i+1, _i,_j,real_i,real_j)
-            add_edge(vit_graph,i,j,transition_mtx[real_i][real_j]) # to Di+1 cur col
-
-        break
+            #print('iter ',_iter,', M',i+1,' to D',i+2, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Di+1 cur col        
 
         #Mn to
-        add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('I',N,N),0) # to In    
-        add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
-
+        _i = get_vertex_ind_ex('M',N,states_num,_iter,N+1,N)
+        _j = get_vertex_ind_ex('I',N,states_num,_iter+1,N+1,N)
+        real_i = map_vertices[_i]
+        real_j = map_vertices[_j]
+        #print('iter ',_iter,', M',N,' to I',N, _i,_j,real_i,real_j)
+        add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) 
+        
+        #add_edge(v_graph,get_vertex_ind('M',N,N),get_vertex_ind('E',0,N),0) # to E
+        
         # Ii to
         for i in xrange(N):
-            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('I',i,N),0) # to I(i)        
-            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('M',i+1,N),0) # to M(i+1)
-            add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
+            _i = get_vertex_ind_ex('I',i,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('I',i,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', I',i,' to I',i, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
 
+            _i = get_vertex_ind_ex('I',i,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('M',i+1,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', I',i,' to M',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
+            
+            _i = get_vertex_ind_ex('I',i,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('D',i+1,states_num,_iter,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', I',i,' to D',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
+            
+            #add_edge(v_graph,get_vertex_ind('I',i,N),get_vertex_ind('D',i+1,N),0) # to D(i+1)
+        
         #In to
-        add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('I',N,N),0) # to In    
-        add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
-
+        _i = get_vertex_ind_ex('I',N,states_num,_iter,N+1,N)
+        _j = get_vertex_ind_ex('I',N,states_num,_iter+1,N+1,N)
+        real_i = map_vertices[_i]
+        real_j = map_vertices[_j]
+        #print('iter ',_iter,', I',N,' to I',N, _i,_j,real_i,real_j)
+        add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
+        
+        #add_edge(v_graph,get_vertex_ind('I',N,N),get_vertex_ind('E',0,N),0) # to E
+        
         #Di to
         for i in xrange(N-1):
-            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
-            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
-            add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
+            _i = get_vertex_ind_ex('D',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('I',i+1,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', D',i+1,' to I',i+1, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Ii next col
+
+            _i = get_vertex_ind_ex('D',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('M',i+2,states_num,_iter+1,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', D',i+1,' to M',i+2, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Mi+1 next col
+
+            _i = get_vertex_ind_ex('D',i+1,states_num,_iter,N+1,N)
+            _j = get_vertex_ind_ex('D',i+2,states_num,_iter,N+1,N)
+            real_i = map_vertices[_i]
+            real_j = map_vertices[_j]
+            #print('iter ',_iter,', D',i+1,' to D',i+2, _i,_j,real_i,real_j)
+            add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j]) # to Di+1 cur col
+
+            #add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('I',i+1,N),0) # to Ii
+            #add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('M',i+2,N),0) # to M(i+1)
+            #add_edge(v_graph,get_vertex_ind('D',i+1,N),get_vertex_ind('D',i+2,N),0) # to D(i+1)
 
         #Dn to
-        add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('I',N,N),0) # to In    
-        add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
+        _i = get_vertex_ind_ex('D',N,states_num,_iter,N+1,N)
+        _j = get_vertex_ind_ex('I',N,states_num,_iter+1,N+1,N)
+        real_i = map_vertices[_i]
+        real_j = map_vertices[_j]
+        #print('iter ',_iter,', D',N,' to I',N, _i,_j,real_i,real_j)
+        add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j])
+            
+        #add_edge(v_graph,get_vertex_ind('D',N,N),get_vertex_ind('E',0,N),0) # to E
+    _iter = len(path)
+    _i = get_vertex_ind_ex('M',N,states_num,_iter,N+1,N)
+    _j = get_vertex_ind_ex('E',N,states_num,_iter+1,N+1,len(path))
+    real_i = map_vertices[_i]
+    real_j = map_vertices[_j]
+    #print('iter ',_iter,', M',N,' to E', _i,_j,real_i,real_j)
+    add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j])
+    
+    _i = get_vertex_ind_ex('I',N,states_num,_iter,N+1,N)
+    _j = get_vertex_ind_ex('E',N,states_num,_iter+1,N+1,len(path))
+    real_i = map_vertices[_i]
+    real_j = map_vertices[_j]
+    #print('iter ',_iter,', I',N,' to E', _i,_j,real_i,real_j)
+    add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j])
 
-    #for cur_col in xrange(len(path)):
-    #print(vit_graph)    
-    #add_edge(v_graph,0,,0)
-    #add_edge(v_graph,0,get_vertex_ind('M',1,N),0)
-    #add_edge(v_graph,0,get_vertex_ind('D',1,N),0)
-    #get_optimal_path_ex(transition_mtx,emission_mtx,path,vertices_elems,alphabet)
+    _i = get_vertex_ind_ex('D',N,states_num,_iter,N+1,N)
+    _j = get_vertex_ind_ex('E',N,states_num,_iter+1,N+1,len(path))
+    real_i = map_vertices[_i]
+    real_j = map_vertices[_j]
+    #print('iter ',_iter,', D',N,' to E', _i,_j,real_i,real_j)
+    add_edge(vit_graph,_i,_j,transition_mtx[real_i][real_j])
+        
+    
+    print(vit_graph)    
+    print(emission_mtx)
+    res = get_optimal_path_ex(path,alphabet,vit_graph,emission_mtx,map_vertices,N,states_num)
+    res_str = ''
+    for r in res:
+        real_r = map_vertices[r]
+        if real_r > 0:
+            res_str += vertices[real_r] + ' '
+        
+    print(res_str)
 
+def task104():
+    # Solve the HMM Parameter Estimation Problem.
+    # Input: A string x of symbols emitted from an HMM, followed by the HMM's alphabet sigma,
+    # followed by a path pi, followed by the collection of states of the HMM.
+    # Output: A transition matrix Transition followed by an emission matrix Emission that maximize
+    # Pr(x, pi) over all possible transition and emission matrices.
+
+    input_file_name = os.getcwd() + "/part2/data/10/input41.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    dest_path = data[0].replace('\n','')
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+    
+    src_path = data[4].replace('\n','')
+    elems_str = data[6].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]
+
+    print(src_elems)
+    print(src_path)
+    print(dest_elems)
+    print(dest_path)
+
+    # transitions
+    transition_mtx = []
+    transtion_row = [0.0 for i in xrange(len(src_elems))]
+    for i in xrange(len(src_elems)):
+        transition_mtx.append(transtion_row[:])
+
+    for i in xrange(len(src_path)-1):
+        _i = src_elems.index(src_path[i])
+        _j = src_elems.index(src_path[i+1])
+        transition_mtx[_i][_j] += 1
+
+    for i in xrange(len(src_elems)):
+        _sum = 0
+        for j in xrange(len(src_elems)):
+            _sum += transition_mtx[i][j]
+        if _sum > 0:
+            for j in xrange(len(src_elems)):
+                transition_mtx[i][j] = transition_mtx[i][j]/_sum
+        else:
+            for j in xrange(len(src_elems)):
+                transition_mtx[i][j] = 1.0/len(src_elems)
+
+    #emissions
+    emission_mtx = []
+    emission_row = [0.0 for i in xrange(len(dest_elems))]
+    for i in xrange(len(src_elems)):
+        emission_mtx.append(emission_row[:])
+
+    for i in xrange(len(src_path)):
+        _i = src_elems.index(src_path[i])
+        _j = dest_elems.index(dest_path[i])
+        emission_mtx[_i][_j] += 1
+    
+    for i in xrange(len(src_elems)):
+        _sum = 0
+        for j in xrange(len(dest_elems)):
+            _sum += emission_mtx[i][j]
+        if _sum > 0:
+            for j in xrange(len(dest_elems)):
+                emission_mtx[i][j] = emission_mtx[i][j]/_sum
+        else:
+            for j in xrange(len(dest_elems)):
+                emission_mtx[i][j] = 1.0/len(dest_elems)
+ 
+
+    mtx_str = ' '
+    for i in xrange(len(src_elems)):
+        mtx_str += '\t'+src_elems[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(src_elems)):
+        mtx_str = src_elems[i]
+        for j in xrange(len(src_elems)):
+            mtx_str += '\t'+"{0:.4f}".format(transition_mtx[i][j])
+        print(mtx_str)
+
+
+    print('--------')
+    mtx_str = ' '
+    for i in xrange(len(dest_elems)):
+        mtx_str += '\t'+dest_elems[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(src_elems)):
+        mtx_str = src_elems[i]
+        for j in xrange(len(dest_elems)):
+            mtx_str += '\t'+"{0:.4f}".format(emission_mtx[i][j])
+        print(mtx_str)
+
+def viterbi(_transition,_emission,_path,_src,_dest):    
+
+    res_mtx = []
+    path_points = []
+
+    src_elem_size = len(_src)
+    for i in xrange(src_elem_size):
+        res_mtx.append([0 for j in xrange(len(_path))])
+        path_points.append([0 for j in xrange(len(_path))])
+
+    for _iter in xrange(len(_path)):        
+        path_ind = _dest.index(_path[_iter])
+        if _iter == 0:
+            res = 0.5            
+            for i in xrange(len(_src)):
+                res_mtx[i][_iter] = 1*0.5*_emission[i][path_ind]
+        else:
+            for i in xrange(len(_src)):
+                max_val = 0
+                max_ind = -1
+                for j in xrange(len(_src)):
+                    cur_val = res_mtx[j][_iter-1]*_transition[j][i]*_emission[i][path_ind]
+                    #if _iter == 4:
+                    #    print(_iter,i,j,res_mtx[j][_iter-1],_transition[j][i],_emission[i][path_ind],cur_val)
+                    if cur_val > max_val:
+                        max_val = cur_val
+                        max_ind = j
+                res_mtx[i][_iter] = max_val
+                path_points[i][_iter] = max_ind
+
+    for s in res_mtx:
+        str_s = ""
+        for _s in s:
+            if _s>0:
+                #str_s += str(math.log(_s,2)) + " "
+                str_s += str(_s) + " "
+            else:
+                str_s += "0"
+        print(str_s)
+
+    for s in path_points:
+        str_s = ""
+        for _s in s:            
+            str_s += str(_s) + " "
+            
+        print(str_s)
+
+    res_str = ""
+    cur_max_ind = -1
+    max_val = 0        
+    next_point = -1
+    for i in xrange(len(_src)):                
+        if res_mtx[i][-1] > max_val:
+            max_val = res_mtx[i][-1]
+            cur_max_ind = i    
+    res_str += _src[cur_max_ind]
+
+    for i in xrange(len(_path)-2,-1,-1):
+        next_point = path_points[cur_max_ind][i+1]
+        res_str = _src[next_point] + res_str
+        cur_max_ind = next_point
+
+    print(res_str)
+
+def task105():
+    # Implement Viterbi learning for estimating the parameters of an HMM.
+    # Input: A number of iterations j, followed by a string x of symbols emitted by an HMM,
+    # followed by the HMM's alphabet sigma, followed by the HMM's states, followed by initial transition
+    # and emission matrices for the HMM.
+    # Output: Emission and transition matrices resulting from applying Viterbi learning for j iterations
+
+    input_file_name = os.getcwd() + "/part2/data/10/input5.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    iter_count = int(data[0].replace('\n',''))
+    dest_path = data[2].replace('\n','')
+    elems_str = data[4].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+    
+    elems_str = data[6].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]
+
+    src_elem_size = len(src_elems)
+    transition_mtx = []
+    for i in xrange(src_elem_size):
+        mtx_str = data[9+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        transition_mtx.append(mtx_els)
+
+    emission_mtx = []
+    dest_elem_size = len(dest_elems)
+    for i in xrange(src_elem_size):
+        ind =11 + src_elem_size + i        
+        mtx_str = data[ind].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        emission_mtx.append(mtx_els)
+
+    print(iter_count)
+    print(src_elems)
+    print(dest_elems)
+    print(dest_path)
+    print(transition_mtx)
+    print(emission_mtx)
+
+    viterbi(transition_mtx,emission_mtx,dest_path,src_elems,dest_elems)
+    for _iter in xrange(iter_count):
+        continue
+ 
 if __name__ == "__main__":   
-    task103() 
+    task105() 
     
