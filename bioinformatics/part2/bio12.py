@@ -331,6 +331,31 @@ def task115():
 
     print(get_max_path(s_graph,spectrum,rev_masses))
 
+def task121():
+    # Solve the Peptide Identification Problem.
+    # Given: A space-delimited spectral vector Spectrum' and an amino acid string Proteome.
+    # Return: A substring of Proteome with maximum score against Spectrum'.
+
+    input_file_name = os.getcwd() + "/part2/data/12/input1.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+
+    spectrum = [int(i) for i in data[0].replace('\n','').split(' ')]
+    spectrum = [0] + spectrum
+
+    peptide = data[1].replace('\n','')
+
+    masses = {'A':71,'C':103,'D':115,'E':129,'F':147,'G':57,'H':137,'I':113,'K':128,'L':113,'M':131,'N':114,'P':97,'Q':128,'R':156,'S':87,'T':101,'V':99,'W':186,'Y':163}
+    rev_masses = {71:'A',103:'C',115:'D',129:'E',147:'F',57:'G',137:'H',113:'I',128:'K',113:'L',131:'M',114:'N',97:'P',128:'Q',156:'R',87:'S',101:'T',99:'V',186:'W',163:'Y'}
+
+    masses = {'X':4,'Z':5}
+    rev_masses = {4:'X',5:'Z'}
+
+    print(spectrum)    
+    print(peptide)
+    
+
 if __name__ == "__main__":   
-    task115() 
+    task121() 
     

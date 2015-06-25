@@ -1082,6 +1082,53 @@ def task103():
         
     print(res_str)
 
+def param_estimation(_src_path,_src_elems,_dest_path,_dest_elems):
+    # transitions
+    transition_mtx = []
+    transtion_row = [0.0 for i in xrange(len(_src_elems))]
+    for i in xrange(len(_src_elems)):
+        transition_mtx.append(transtion_row[:])
+
+    for i in xrange(len(_src_path)-1):
+        _i = _src_elems.index(_src_path[i])
+        _j = _src_elems.index(_src_path[i+1])
+        transition_mtx[_i][_j] += 1
+
+    for i in xrange(len(_src_elems)):
+        _sum = 0
+        for j in xrange(len(_src_elems)):
+            _sum += transition_mtx[i][j]
+        if _sum > 0:
+            for j in xrange(len(_src_elems)):
+                transition_mtx[i][j] = transition_mtx[i][j]/_sum
+        else:
+            for j in xrange(len(_src_elems)):
+                transition_mtx[i][j] = 1.0/len(_src_elems)
+
+    #emissions
+    emission_mtx = []
+    emission_row = [0.0 for i in xrange(len(_dest_elems))]
+    for i in xrange(len(_src_elems)):
+        emission_mtx.append(emission_row[:])
+
+    for i in xrange(len(_src_path)):
+        _i = _src_elems.index(_src_path[i])
+        _j = _dest_elems.index(_dest_path[i])
+        emission_mtx[_i][_j] += 1
+    
+    for i in xrange(len(_src_elems)):
+        _sum = 0
+        for j in xrange(len(_dest_elems)):
+            _sum += emission_mtx[i][j]
+        if _sum > 0:
+            for j in xrange(len(_dest_elems)):
+                emission_mtx[i][j] = emission_mtx[i][j]/_sum
+        else:
+            for j in xrange(len(_dest_elems)):
+                emission_mtx[i][j] = 1.0/len(_dest_elems)
+    return [transition_mtx,emission_mtx]
+    
+
 def task104():
     # Solve the HMM Parameter Estimation Problem.
     # Input: A string x of symbols emitted from an HMM, followed by the HMM's alphabet sigma,
@@ -1107,51 +1154,10 @@ def task104():
     print(dest_elems)
     print(dest_path)
 
-    # transitions
-    transition_mtx = []
-    transtion_row = [0.0 for i in xrange(len(src_elems))]
-    for i in xrange(len(src_elems)):
-        transition_mtx.append(transtion_row[:])
-
-    for i in xrange(len(src_path)-1):
-        _i = src_elems.index(src_path[i])
-        _j = src_elems.index(src_path[i+1])
-        transition_mtx[_i][_j] += 1
-
-    for i in xrange(len(src_elems)):
-        _sum = 0
-        for j in xrange(len(src_elems)):
-            _sum += transition_mtx[i][j]
-        if _sum > 0:
-            for j in xrange(len(src_elems)):
-                transition_mtx[i][j] = transition_mtx[i][j]/_sum
-        else:
-            for j in xrange(len(src_elems)):
-                transition_mtx[i][j] = 1.0/len(src_elems)
-
-    #emissions
-    emission_mtx = []
-    emission_row = [0.0 for i in xrange(len(dest_elems))]
-    for i in xrange(len(src_elems)):
-        emission_mtx.append(emission_row[:])
-
-    for i in xrange(len(src_path)):
-        _i = src_elems.index(src_path[i])
-        _j = dest_elems.index(dest_path[i])
-        emission_mtx[_i][_j] += 1
-    
-    for i in xrange(len(src_elems)):
-        _sum = 0
-        for j in xrange(len(dest_elems)):
-            _sum += emission_mtx[i][j]
-        if _sum > 0:
-            for j in xrange(len(dest_elems)):
-                emission_mtx[i][j] = emission_mtx[i][j]/_sum
-        else:
-            for j in xrange(len(dest_elems)):
-                emission_mtx[i][j] = 1.0/len(dest_elems)
+    params = param_estimation(src_path,src_elems,dest_path,dest_elems)
  
-
+    transition_mtx = params[0]
+    emission_mtx = params[1]
     mtx_str = ' '
     for i in xrange(len(src_elems)):
         mtx_str += '\t'+src_elems[i]
@@ -1214,14 +1220,14 @@ def viterbi(_transition,_emission,_path,_src,_dest):
                 str_s += str(_s) + " "
             else:
                 str_s += "0"
-        print(str_s)
+        #print(str_s)
 
     for s in path_points:
         str_s = ""
         for _s in s:            
             str_s += str(_s) + " "
             
-        print(str_s)
+        #print(str_s)
 
     res_str = ""
     cur_max_ind = -1
@@ -1238,7 +1244,8 @@ def viterbi(_transition,_emission,_path,_src,_dest):
         res_str = _src[next_point] + res_str
         cur_max_ind = next_point
 
-    print(res_str)
+    return res_str
+
 
 def task105():
     # Implement Viterbi learning for estimating the parameters of an HMM.
@@ -1247,7 +1254,7 @@ def task105():
     # and emission matrices for the HMM.
     # Output: Emission and transition matrices resulting from applying Viterbi learning for j iterations
 
-    input_file_name = os.getcwd() + "/part2/data/10/input5.txt"
+    input_file_name = os.getcwd() + "/part2/data/10/input51.txt"
 
     with open (input_file_name, "r") as myfile:
         data=myfile.readlines()
@@ -1282,10 +1289,170 @@ def task105():
     print(transition_mtx)
     print(emission_mtx)
 
-    viterbi(transition_mtx,emission_mtx,dest_path,src_elems,dest_elems)
+    
     for _iter in xrange(iter_count):
-        continue
+        res_str = viterbi(transition_mtx,emission_mtx,dest_path,src_elems,dest_elems)
+
+        params = param_estimation(res_str,src_elems,dest_path,dest_elems)
+        new_transition = params[0]
+        transition_mtx = []
+        for new_row in new_transition:
+            transition_mtx.append(new_row[:])
+
+        new_emission = params[1]
+        emission_mtx = []
+        for new_row in new_emission:
+            emission_mtx.append(new_row[:])
+
+    mtx_str = ' '
+    for i in xrange(len(src_elems)):
+        mtx_str += '\t'+src_elems[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(src_elems)):
+        mtx_str = src_elems[i]
+        for j in xrange(len(src_elems)):
+            mtx_str += '\t'+"{0:.4f}".format(transition_mtx[i][j])
+        print(mtx_str)
+
+
+    print('--------')
+    mtx_str = ' '
+    for i in xrange(len(dest_elems)):
+        mtx_str += '\t'+dest_elems[i]
+    print(mtx_str)
+    # print transition matrix
+    for i in xrange(len(src_elems)):
+        mtx_str = src_elems[i]
+        for j in xrange(len(dest_elems)):
+            mtx_str += '\t'+"{0:.4f}".format(emission_mtx[i][j])
+        print(mtx_str)
+
+
+def get_iter_by_index_ex(_ind,_M):
+    if _ind == 0:
+        return -1
+    return (_ind-1)/_M
+
+def get_iter_start_ind(_iter,_M):
+    if _iter < 0:
+        return 0
+    return _M*_iter + 1
+    
+#graph mode
+def soft_decoding(_transition,_emission,_path,_src,_dest):    
+
+    res_mtx = []
+    path_points = []
+
+    _graph = []
+    rev_graph = []
+    N = len(_path)
+    M = len(_src)
+    v_count = M*N+2
+    build_empty_graph(_graph,v_count)
+    build_empty_graph(rev_graph,v_count)
+
+    for i in xrange(-1, len(_path)-1):        
+        start_i = get_iter_start_ind(i,M)        
+        cur_ind = _dest.index(_path[i+1])
+        if i >=0:
+            for j in xrange(len(_src)):
+                start_j = get_iter_start_ind(i+1,M)
+                for k in xrange(len(_src)):
+                    add_edge(_graph,start_i+j,start_j+k,_transition[j][k]*_emission[k][cur_ind])                    
+                    add_edge(rev_graph,start_j+k,start_i+j,_transition[j][k]*_emission[k][cur_ind])
+        else:            
+            for k in xrange(len(_src)):
+                add_edge(_graph,start_i,start_i+k+1,0.5*_emission[k][cur_ind])
+                add_edge(rev_graph,start_i+k+1,start_i,0.5*_emission[k][cur_ind])
+    
+    start_i = get_iter_start_ind(len(_path)-1,M)
+    start_j = get_iter_start_ind(len(_path),M)
+    for k in xrange(len(_src)):
+        add_edge(_graph,start_i+k,start_j,1)
+        add_edge(rev_graph,start_j,start_i+k,1)
+
+    blue_weights = [0 for i in xrange(v_count)]
+    blue_weights[0] = 1
+    red_weights = [0 for i in xrange(v_count)]
+    red_weights[-1] = 1
+
+    for i in xrange(v_count):
+        vs = _graph[2+i]
+        print(i, vs)
+        for v in vs:
+            blue_weights[v[0]] += blue_weights[i]*v[1]
+
+    print(blue_weights)
+
+    for i in xrange(v_count-1,0,-1):
+        vs = rev_graph[2+i]
+        print(i, vs)
+        for v in vs:
+            red_weights[v[0]] += red_weights[i]*v[1]
+
+    print(red_weights)
+
+    res_weights = [0 for i in xrange(v_count)]
+    for i in xrange(v_count):
+        res_weights[i] = blue_weights[i]*red_weights[i]/blue_weights[-1]
+
+    res_str = ''
+    for i in xrange(len(_src)):
+        res_str += _src[i] + '\t'
+    print(res_str)
+    for i in xrange(len(_path)):
+        res_str = ''
+        for j in xrange(len(_src)):
+            res_str += "{0:.4f}".format(res_weights[i*len(_src)+j+1]) + '\t'
+        print(res_str)
+    
+
+    
+
+def task106():
+    # Solve the Soft Decoding Problem.
+    # Input: A string x, followed by the alphabet Sigma from which x was constructed,
+    # followed by the states States, transition matrix Transition, and emission matrix
+    # Emission of an HMM (Sigma, States, Transition, Emission).
+    # Output: An |x| x |States| matrix whose (i, k)-th element holds the conditional probability Pr(pi_i = k|x).
+
+    input_file_name = os.getcwd() + "/part2/data/10/input61.txt"
+
+    with open (input_file_name, "r") as myfile:
+        data=myfile.readlines()
+    
+    dest_path = data[0].replace('\n','')
+    elems_str = data[2].replace('\n','').replace('\t',' ')        
+    dest_elems = [e for e in elems_str.split(' ')]
+    
+    elems_str = data[4].replace('\n','').replace('\t',' ')        
+    src_elems = [e for e in elems_str.split(' ')]     
+
+    src_elem_size = len(src_elems)
+    transition_mtx = []
+    for i in xrange(src_elem_size):
+        mtx_str = data[7+i].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        transition_mtx.append(mtx_els)
+
+    emission_mtx = []
+    dest_elem_size = len(dest_elems)
+    for i in xrange(src_elem_size):
+        ind =9 + src_elem_size + i        
+        mtx_str = data[ind].replace('\n','').replace('\t',' ')        
+        mtx_els = [float(i) for i in (mtx_str.split())[1:]]
+        emission_mtx.append(mtx_els)  
+
+    print(src_elems)
+    print(dest_elems)
+    print(dest_path)
+    print(transition_mtx)
+    print(emission_mtx)
+
+    soft_decoding(transition_mtx,emission_mtx,dest_path,src_elems,dest_elems)
  
 if __name__ == "__main__":   
-    task105() 
+    task106() 
     
