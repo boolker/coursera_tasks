@@ -1,15 +1,30 @@
 from __future__ import print_function
 import pandas
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+
 
 data = pandas.read_csv('titanic.csv', index_col='PassengerId')
 total = len(data)
 
-f1 = open('data/111.txt','w')
+subdata = data[['Pclass','Fare','Sex','Age','Survived']]
+
+#print(subdata)
+
+subdata['Sex'] = subdata.apply(lambda x: x[2]=='male',axis='columns')
+
+subdata = subdata[np.isnan(subdata['Age'])!=True]
+#print(subdata)
+clf = DecisionTreeClassifier(random_state=241)
+clf.fit(subdata[['Pclass','Fare','Sex','Age']], subdata[['Survived']])
+importances = clf.feature_importances_
+print(importances)
+f1 = open('data/121.txt','w')
 sex = data['Sex'].value_counts()
 #print(data['Sex'].value_counts())
 print('1. ',sex['male'],' ',sex['female'])
 print(sex['male'],' ',sex['female'], file=f1)
-
+'''
 f2 = open('data/112.txt','w')
 survived = data['Survived'].value_counts()
 print('2. ','{0:.2f}'.format(survived[1]*100/float(total)))
@@ -48,14 +63,6 @@ for name in f_names:
 				first_name = name_parts[0]
 			
 	#print(name, '-->',f_name[1], '-->', first_name)	
-	'''print(f_name)
-	#print(name, name_parts)
-	for p in name_parts:
-		if p == 'Mrs.':
-			continue
-		if p == 'Miss.':
-			continue
-		names.append(p.replace('(','').replace(')','').replace('\"',''))'''
 	if len(first_name) > 0:
 		names.append(first_name.replace('(','').replace(')',''))
 print(sorted(names))
@@ -65,4 +72,4 @@ print(top_names)
 
 print('6. ', top_names.axes[0][0])
 print(top_names.axes[0][0],file=f6)
-#print((df_names['name'].value_counts()),file=f6)
+#print((df_names['name'].value_counts()),file=f6)'''
