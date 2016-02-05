@@ -1,68 +1,57 @@
 from __future__ import print_function
 import pandas
 
-data = pandas.read_csv('titanic.csv', index_col='PassengerId')
+import numpy as np
+import sklearn
+from sklearn import cross_validation
+from sklearn import datasets
+from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import preprocessing
+
+data = pandas.read_csv('wine.data')
 total = len(data)
-
-f1 = open('data/111.txt','w')
-sex = data['Sex'].value_counts()
-#print(data['Sex'].value_counts())
-print('1. ',sex['male'],' ',sex['female'])
-print(sex['male'],' ',sex['female'], file=f1)
-
-f2 = open('data/112.txt','w')
-survived = data['Survived'].value_counts()
-print('2. ','{0:.2f}'.format(survived[1]*100/float(total)))
-print('{0:.2f}'.format(survived[1]*100/float(total)),file=f2)
+#print()
+Y = data.ix[:,0]
 
 
-#print(data['Pclass'].value_counts())
-f3 = open('data/113.txt','w')
-classes = data['Pclass'].value_counts()
-print('3. ', '{0:.2f}'.format(classes[1]*100/float(total)))
-print('{0:.2f}'.format(classes[1]*100/float(total)),file=f3)
+X = data[[1,2,3,4,5,6,7,8,9,10,11,12,13]]
+#print(Y,X)
 
-f4 = open('data/114.txt','w')
-print('4. ', '{0:.2f}'.format(data['Age'].mean()),' ','{0:.2f}'.format(data['Age'].median()))
-print(data['Age'].mean(),' ',data['Age'].median(),file=f4)
+folds = sklearn.cross_validation.KFold(total, n_folds=5, shuffle=True,random_state=42)
+#for train, test in folds:
+#	print(train, test)
+max_k = -1
+max_mean = 0
+for k in xrange(1,51):
+	kn = KNeighborsClassifier(n_neighbors=k)
+	res = sklearn.cross_validation.cross_val_score(kn,X,Y.values,cv=folds)
+	r_mean = res.mean()
+	if r_mean > max_mean:
+		max_mean = r_mean
+		max_k = k
+	#print(k, res, res.mean())
+max_k_scaled = -1
+max_mean_scaled = 0
 
-#print(data['SibSp'])
-f5 = open('data/115.txt','w')
-print('5. ', data['SibSp'].corr(data['Parch']))
-print(data['SibSp'].corr(data['Parch']),file=f5)
+X_scaled = preprocessing.scale(X)
+for k in xrange(1,51):
+	kn = KNeighborsClassifier(n_neighbors=k)
+	res = sklearn.cross_validation.cross_val_score(kn,X_scaled,Y.values,cv=folds)
+	r_mean = res.mean()
+	if r_mean > max_mean_scaled:
+		max_mean_scaled = r_mean
+		max_k_scaled = k
 
-f6 = open('data/116.txt','w')
-names = []
-f_names = data[data['Sex']=='female']['Name']
-for name in f_names:
-	#print(name)
-	first_name = ''
-	f_name = ((name.split(','))[1].strip().split('.'))	
-	if f_name[0] == 'Miss':
-		first_name = (f_name[1].strip().split(' '))[0]
-	elif f_name[0] == 'Mrs':
-		#print((f_name[1].strip().split('(')))
-		if '(' in f_name[1]:
-			name_parts = (f_name[1].strip().split('('))[1].split(' ')
-			if len(name_parts) > 0:
-				first_name = name_parts[0]
-			
-	#print(name, '-->',f_name[1], '-->', first_name)	
-	'''print(f_name)
-	#print(name, name_parts)
-	for p in name_parts:
-		if p == 'Mrs.':
-			continue
-		if p == 'Miss.':
-			continue
-		names.append(p.replace('(','').replace(')','').replace('\"',''))'''
-	if len(first_name) > 0:
-		names.append(first_name.replace('(','').replace(')',''))
-print(sorted(names))
-df_names = pandas.DataFrame(names,columns=['name'])
-top_names = df_names['name'].value_counts()
-print(top_names)
+print(max_k, max_mean,max_k_scaled,max_mean_scaled)
+f1 = open('data/211.txt','w')
+print(max_k, file=f1)
+f2 = open('data/212.txt','w')
+print(max_mean, file=f2)
+f3 = open('data/213.txt','w')
+print(max_k_scaled, file=f3)
+f4 = open('data/214.txt','w')
+print(max_mean_scaled, file=f4)
 
-print('6. ', top_names.axes[0][0])
-print(top_names.axes[0][0],file=f6)
-#print((df_names['name'].value_counts()),file=f6)
+#########
+
