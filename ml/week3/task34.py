@@ -10,88 +10,130 @@ from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.grid_search import GridSearchCV
 
-from sklearn import datasets
+from sklearn import metrics
 from sklearn.metrics import roc_auc_score
 
-def calc_delta(_w,_w_old,_n):
-	_sum = 0
-	for i in xrange(_n):
-		_sum += (_w[i]-_w_old[i])*(_w[i]-_w_old[i])
-	return math.sqrt(_sum)
 
-def regression(_X,_Y,_k,_C,_eps):
-	w_old = [0,0]
-	_w = [0,0]
+def get_p(_y_true,_y_pred,r_threshold):
+	p = 0
+	max_p = 0
+	_p, _r, _t = metrics.precision_recall_curve(_y_true,_y_pred)
+	#print(_p, _r)
+	for i in xrange(len(_p)):
+		if _r[i] >= r_threshold:
+			if _p[i] > max_p:
+				max_p = _p[i]
+	return max_p
 
-	total = len(_Y)	
 
-	for _it in xrange(10000):
-		for k in xrange(2):
-			_w[k] = w_old[k] - _k*_C*w_old[k]
-			_sum = 0
-			for i, x in _X.iterrows():
-				_M = 0
-				for j in xrange(2):
-					_M += w_old[j]*x[j+1]
-				_sum += _Y[i]*x[k+1]*(1 - 1.0/(1+math.exp(-1*_Y[i]*_M)))
-			_w[k] = _w[k] + _sum*_k/total
-		#	print(x[1],x[2])
-		delta = calc_delta(_w,w_old,2)
-		if delta < _eps:
-			break
-		for k in xrange(2):
-			w_old[k] = _w[k]
-		
-	print(_w,_it)
-	return _w
+data_class = pandas.read_csv('classification.csv')
+#print(data_class)
 
-data_train = pandas.read_csv('data-logistic.csv',header=None)
-print(data_train)
 
-X = data_train[[1,2]]
-Y = data_train.ix[:,0]
+y_real = data_class.ix[:,0]
+y_pred = data_class.ix[:,1]
 
-Y_bin = [0 if y == -1 else y for y in Y]
-#print(Y)
-#print(X,Y)
-#for i, x in X.iterrows():
-#	print(x[1],x[2])
-total = len(Y)
+tp = 0
+fp = 0
+tn = 0
+fn = 0
 
-w = regression(X,Y,0.1,10,1e-5)
+for i in xrange(len(y_real)):
+	if y_real[i] == 1:
+		if y_pred[i] == 1:
+			tp += 1
+		else:
+			fn += 1
+	else:
+		if y_pred[i] == 1:
+			fp += 1
+		else:
+			tn += 1
 
-Y_score = [0 for i in xrange(total)]
-#print(Y_score)
-for i, x in X.iterrows():
-	_M = 0
-	for j in xrange(2):
-		_M += w[j]*x[j+1]
-	#_M = _M*Y[i]
-	Y_score[i] =  1.0/(1+math.exp(-1*_M))
-#print(Y_score)
-res = [0,0]
-res[0] = roc_auc_score(Y, Y_score)
+acc = metrics.accuracy_score(y_real,y_pred)
+precision = metrics.precision_score(y_real,y_pred)
+recall = metrics.recall_score(y_real,y_pred)
+f1_s = metrics.f1_score(y_real,y_pred)
 
-w = regression(X,Y,0.1,0,1e-5)
+print(tp,fp,fn,tn)
+f1 = open('data/341.txt','w')
+print(tp,fp,fn,tn, file=f1)
 
-Y_score = [0 for i in xrange(total)]
+res_str = '{0:.2f}'.format(acc) + ' ' + '{0:.2f}'.format(precision) + ' ' + '{0:.2f}'.format(recall) + ' ' + '{0:.2f}'.format(f1_s)
+f2 = open('data/342.txt','w')
+print(res_str, file=f2)
 
-for i, x in X.iterrows():
-	_M = 0
-	for j in xrange(2):
-		_M += w[j]*x[j+1]
-	#_M = _M*Y[i]
-	Y_score[i] =  1.0/(1+math.exp(-1*_M))
-#print(Y_score)
-res[1] = roc_auc_score(Y, Y_score)
+scores = pandas.read_csv('scores.csv')
+y_true = scores.ix[:,0]
+y_log = scores.ix[:,1]
+y_svm = scores.ix[:,2]
+y_knn = scores.ix[:,3]
+y_tree = scores.ix[:,4]
+max_score = 0
+column_name = ''
+score = metrics.roc_auc_score(y_true,y_log)
+print(score)
+if score > max_score:
+	max_score = score
+	column_name = 'score_logreg'
 
-print(res)
-res_str = ''
-for r in res:
-	res_str += '{0:.3f}'.format(r) + ' '
-	#res_str += str(r) + ' '
+score = metrics.roc_auc_score(y_true,y_svm)
+print(score)
+if score > max_score:
+	max_score = score
+	column_name = 'score_svm'
 
-print(res_str)
-f1 = open('data/331.txt','w')
-print(res_str, file=f1)
+score = metrics.roc_auc_score(y_true,y_knn)
+print(score)
+if score > max_score:
+	max_score = score
+	column_name = 'score_knn'
+
+score = metrics.roc_auc_score(y_true,y_tree)
+print(score)
+if score > max_score:
+	max_score = score
+	column_name = 'score_tree'
+
+print(max_score, column_name)
+f3 = open('data/343.txt','w')
+print(column_name, file=f3)
+
+
+log_p = get_p(y_true,y_log,0.7)
+print(log_p)
+
+svm_p = get_p(y_true,y_svm,0.7)
+print(svm_p)
+
+knn_p = get_p(y_true,y_knn,0.7)
+print(knn_p)
+
+tree_p = get_p(y_true,y_tree,0.7)
+print(tree_p)
+
+max_score = 0
+column_name = ''
+if log_p > max_score:
+	max_score = log_p
+	column_name = 'score_logreg'
+
+if svm_p > max_score:
+	max_score = svm_p
+	column_name = 'score_svm'
+
+if knn_p > max_score:
+	max_score = knn_p
+	column_name = 'score_knn'
+
+if tree_p > max_score:
+	max_score = tree_p
+	column_name = 'score_tree'
+
+print(max_score, column_name)
+f4 = open('data/344.txt','w')
+print(column_name, file=f4)
+
+
+
 
